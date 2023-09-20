@@ -58,7 +58,7 @@
             </div>
             @await Component.InvokeAsync("Widget", new { widgetZone = PublicWidgetZones.BoardsForumTop, additionalData = Model })
             @{
-                var pager = await Html.PagerAsync(new PagerModel(localizationService)
+         var pager = await Html.PagerAsync(new PagerModel(localizationService)
             {
                 PageSize = Model.TopicPageSize,
                 TotalRecords = Model.TopicTotalRecords,
@@ -66,7 +66,7 @@
                 ShowTotalSummary = false,
                 RouteActionName = "ForumSlugPaged",
                 UseRouteLinks = true,
-                RouteValues = new RouteValues { Id = Model.Id, Slug = Model.SeName }
+                //RouteValues = new RouteValues { Id = Model.Id, Slug = Model.SeName }
             });
             }
             @if (!string.IsNullOrEmpty(await pager.RenderHtmlContentAsync()))
