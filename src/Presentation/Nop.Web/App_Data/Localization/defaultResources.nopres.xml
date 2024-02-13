@@ -366,6 +366,9 @@
   <LocaleResource Name="Account.Fields.Gender.Male">
     <Value>Male</Value>
   </LocaleResource>
+  <LocaleResource Name="Account.Fields.Gender.Neutral">
+      <Value>Neutral</Value>
+  </LocaleResource>
   <LocaleResource Name="Account.Fields.LastName">
     <Value>Last name</Value>
   </LocaleResource>
@@ -3066,12 +3069,6 @@
   <LocaleResource Name="Admin.Catalog.Products.Fields.IsTaxExempt.Hint">
     <Value>Determines whether this product is tax exempt (tax will not be applied to this product at checkout).</Value>
   </LocaleResource>
-  <LocaleResource Name="Admin.Catalog.Products.Fields.IsTelecommunicationsOrBroadcastingOrElectronicServices">
-    <Value>Telecommunications, broadcasting and electronic services</Value>
-  </LocaleResource>
-  <LocaleResource Name="Admin.Catalog.Products.Fields.IsTelecommunicationsOrBroadcastingOrElectronicServices.Hint">
-    <Value>Check if it's telecommunications, broadcasting and electronic services. It's used for tax calculation in Europe Union.</Value>
-  </LocaleResource>
   <LocaleResource Name="Admin.Catalog.Products.Fields.Length">
     <Value>Length</Value>
   </LocaleResource>
@@ -4461,23 +4458,17 @@
   <LocaleResource Name="Admin.Configuration.AppSettings.Cache">
     <Value>Cache configuration</Value>
   </LocaleResource>
-  <LocaleResource Name="Admin.Configuration.AppSettings.Cache.BundledFilesCacheTime">
-    <Value>Bundled files cache time</Value>
-  </LocaleResource>
-  <LocaleResource Name="Admin.Configuration.AppSettings.Cache.BundledFilesCacheTime.Hint">
-    <Value>Set bundled files cache time (in minutes).</Value>
-  </LocaleResource>
   <LocaleResource Name="Admin.Configuration.AppSettings.Cache.DefaultCacheTime">
     <Value>Default cache time</Value>
   </LocaleResource>
   <LocaleResource Name="Admin.Configuration.AppSettings.Cache.DefaultCacheTime.Hint">
     <Value>Set default cache time (in minutes).</Value>
   </LocaleResource>
-  <LocaleResource Name="Admin.Configuration.AppSettings.Cache.ShortTermCacheTime">
-    <Value>Short term cache time</Value>
+  <LocaleResource Name="Admin.Configuration.AppSettings.Cache.LinqDisableQueryCache">
+    <Value>Disable query cache</Value>
   </LocaleResource>
-  <LocaleResource Name="Admin.Configuration.AppSettings.Cache.ShortTermCacheTime.Hint">
-    <Value>Set short term cache time (in minutes).</Value>
+  <LocaleResource Name="Admin.Configuration.AppSettings.Cache.LinqDisableQueryCache.Hint">
+    <Value>Disable LINQ expressions caching for queries. This cache reduces time, required for query parsing but have several side-effects. For example, cached LINQ expressions could contain references to external objects as parameters, which could lead to memory leaks if those objects are not used anymore by other code. Or cache access synchronization could lead to bigger latencies than it saves.</Value>
   </LocaleResource>
   <LocaleResource Name="Admin.Configuration.AppSettings.Common">
     <Value>Common configuration</Value>
@@ -4500,17 +4491,29 @@
   <LocaleResource Name="Admin.Configuration.AppSettings.Common.DisplayFullErrorStack.Hint">
     <Value>Enable this setting to display the full error in production environment. It's ignored (always enabled) in development environment.</Value>
   </LocaleResource>
-  <LocaleResource Name="Admin.Configuration.AppSettings.Common.MiniProfilerEnabled">
-    <Value>Enable MiniProfiler</Value>
+  <LocaleResource Name="Admin.Configuration.AppSettings.Common.PermitLimit">
+     <Value>Permit limit</Value>
   </LocaleResource>
-  <LocaleResource Name="Admin.Configuration.AppSettings.Common.MiniProfilerEnabled.Hint">
-    <Value>Enable this setting to display the performance indicator by MiniProfiler. By default, the performance indicator can see only Administrators, to change this behavior set ACL rules in the admin area.</Value>
+  <LocaleResource Name="Admin.Configuration.AppSettings.Common.PermitLimit.Hint">
+     <Value>Maximum number of permit counters that can be allowed in a window (1 minute). Must be set to a value > 0 by the time these options are passed to the constructor of FixedWindowRateLimiter. If set to 0 than limitation is off.</Value>
   </LocaleResource>
   <LocaleResource Name="Admin.Configuration.AppSettings.Common.PluginStaticFileExtensionsBlacklist">
     <Value>Plugin static file extensions blacklist</Value>
   </LocaleResource>
   <LocaleResource Name="Admin.Configuration.AppSettings.Common.PluginStaticFileExtensionsBlacklist.Hint">
     <Value>Specify the blacklist of static file extension for plugin directories.</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.AppSettings.Common.QueueCount">
+    <Value>Queue count</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.AppSettings.Common.QueueCount.Hint">
+    <Value>Maximum cumulative permit count of queued acquisition requests. Must be set to a value >= 0 by the time these options are passed to the constructor of FixedWindowRateLimiter. If set to 0 than Queue is off.</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.AppSettings.Common.RejectionStatusCode">
+    <Value>Rejection status code</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.AppSettings.Common.RejectionStatusCode.Hint">
+    <Value>Default status code to set on the response when a request is rejected.</Value>
   </LocaleResource>
   <LocaleResource Name="Admin.Configuration.AppSettings.Common.ScheduleTaskRunTimeout">
     <Value>Schedule task run timeout</Value>
@@ -4568,6 +4571,12 @@
   </LocaleResource>
   <LocaleResource Name="Admin.Configuration.AppSettings.Data.SQLCommandTimeout.Hint">
     <Value>Gets or sets the wait time (in seconds) before terminating the attempt to execute a command and generating an error. By default, timeout isn't set and a default value for the current provider used. Set 0 to use infinite timeout.</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.AppSettings.Data.WithNoLock">
+    <Value>Use NOLOCK</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.AppSettings.Data.WithNoLock.Hint">
+    <Value>Check to add the NOLOCK hint to SELECT statements.</Value>
   </LocaleResource>
   <LocaleResource Name="Admin.Configuration.AppSettings.Description">
     <Value><![CDATA[Configuration in ASP.NET Core is performed using a different configuration providers (e.g. external appsettings.json configuration file, environment variables, etc). These settings are used when the application is launched, so after editing them, the application will be restarted. You can find a detailed description of all configuration parameters in <a href="{0}" target="_blank">our documentation</a>. Please note that changing the values here will overwrite the external appsettings.json file, settings from other configuration providers will not be affected.]]></Value>
@@ -5094,6 +5103,12 @@
   <LocaleResource Name="Admin.Configuration.EmailAccounts.AddNew">
     <Value>Add a new email account</Value>
   </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.EmailAccounts.AuthorizationRequest.Text">
+    <Value>Authorization request</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.EmailAccounts.AuthorizationRequest.Info">
+    <Value>Your application must have that consent before it can execute a Google API request that requires user authorization. Click the {0} button below and follow the steps to perform API requests.</Value>
+  </LocaleResource>
   <LocaleResource Name="Admin.Configuration.EmailAccounts.BackToList">
     <Value>back to email account list</Value>
   </LocaleResource>
@@ -5102,6 +5117,24 @@
   </LocaleResource>
   <LocaleResource Name="Admin.Configuration.EmailAccounts.EditEmailAccountDetails">
     <Value>Edit email account details</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.EmailAccounts.Fields.ClientId">
+    <Value>Client ID</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.EmailAccounts.Fields.ClientId.Hint">
+    <Value>Public identifier for application.</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.EmailAccounts.Fields.ClientSecret">
+    <Value>Client Secret</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.EmailAccounts.Fields.ClientSecret.Change">
+    <Value>Change</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.EmailAccounts.Fields.ClientSecret.ClientSecretChanged">
+    <Value>The client Secret has been changed successfully.</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.EmailAccounts.Fields.ClientSecret.Hint">
+    <Value>The secret known only to the application and the authorization server.</Value>
   </LocaleResource>
   <LocaleResource Name="Admin.Configuration.EmailAccounts.Fields.DisplayName">
     <Value>Email display name</Value>
@@ -5114,6 +5147,12 @@
   </LocaleResource>
   <LocaleResource Name="Admin.Configuration.EmailAccounts.Fields.Email.Hint">
     <Value>This is the from address for all outgoing emails from your store e.g. 'sales@yourstore.com'.</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.EmailAccounts.Fields.EmailAuthenticationMethod">
+    <Value>Authentication method</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.EmailAccounts.Fields.EmailAuthenticationMethod.Hint">
+    <Value>Choose the authentication method that will be used to identify the client when connecting to the SMTP server.</Value>
   </LocaleResource>
   <LocaleResource Name="Admin.Configuration.EmailAccounts.Fields.EnableSsl">
     <Value>SSL</Value>
@@ -5132,6 +5171,15 @@
   </LocaleResource>
   <LocaleResource Name="Admin.Configuration.EmailAccounts.Fields.MarkAsDefaultEmail">
     <Value>Mark as default email account</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.EmailAccounts.Fields.MaxNumberOfEmails">
+    <Value>Max number of emails</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.EmailAccounts.Fields.MaxNumberOfEmails.Hint">
+    <Value>The maximum number of emails sent at one time.</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.EmailAccounts.Fields.MaxNumberOfEmails.ShouldBeGreaterThanZero">
+    <Value>The maximum number of emails should be greater 0.</Value>
   </LocaleResource>
   <LocaleResource Name="Admin.Configuration.EmailAccounts.Fields.Password">
     <Value>Password</Value>
@@ -5157,11 +5205,11 @@
   <LocaleResource Name="Admin.Configuration.EmailAccounts.Fields.SendTestEmailTo.Hint">
     <Value>Send test email to ensure that everything is properly configured.</Value>
   </LocaleResource>
-  <LocaleResource Name="Admin.Configuration.EmailAccounts.Fields.UseDefaultCredentials">
-    <Value>Use default credentials</Value>
+  <LocaleResource Name="Admin.Configuration.EmailAccounts.Fields.TenantId">
+    <Value>Tenant identifier</Value>
   </LocaleResource>
-  <LocaleResource Name="Admin.Configuration.EmailAccounts.Fields.UseDefaultCredentials.Hint">
-    <Value>Check to use default credentials for the connection.</Value>
+  <LocaleResource Name="Admin.Configuration.EmailAccounts.Fields.TenantId.Hint">
+    <Value>The tenant ID can be a GUID (the ID of your Microsoft Entra instance), domain name or one of placeholders: "organizations", "consumers", "common".</Value>
   </LocaleResource>
   <LocaleResource Name="Admin.Configuration.EmailAccounts.Fields.Username">
     <Value>User</Value>
@@ -6704,9 +6752,15 @@
   </LocaleResource>
   <LocaleResource Name="Admin.Configuration.Settings.CustomerUser.GenderEnabled">
     <Value>'Gender' enabled</Value>
-  </LocaleResource>
+  </LocaleResource>  
   <LocaleResource Name="Admin.Configuration.Settings.CustomerUser.GenderEnabled.Hint">
     <Value>Set if 'Gender' is enabled.</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.Settings.CustomerUser.NeutralGenderEnabled">
+      <Value>'Neutral' option enabled</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.Settings.CustomerUser.NeutralGenderEnabled.Hint">
+      <Value>Set if you need three gender options available - Male, female, neutral (as per German laws).</Value>
   </LocaleResource>
   <LocaleResource Name="Admin.Configuration.Settings.CustomerUser.HideBackInStockSubscriptionsTab">
     <Value>Hide 'Back in stock subscriptions' tab</Value>
@@ -8600,9 +8654,6 @@
   </LocaleResource>
   <LocaleResource Name="Admin.Configuration.Settings.ProductEditor.Stores">
     <Value>Stores</Value>
-  </LocaleResource>
-  <LocaleResource Name="Admin.Configuration.Settings.ProductEditor.TelecommunicationsBroadcastingElectronicServices">
-    <Value>Telecommunications, broadcasting and electronic services</Value>
   </LocaleResource>
   <LocaleResource Name="Admin.Configuration.Settings.ProductEditor.TierPrices">
     <Value>Tier prices</Value>
@@ -10605,6 +10656,9 @@
   <LocaleResource Name="Admin.ContentManagement.MessageTemplates.Description.Customer.WelcomeMessage">
     <Value>This message template is used to welcome a new customer after registration.</Value>
   </LocaleResource>
+  <LocaleResource Name="Admin.ContentManagement.MessageTemplates.Description.Customer.Gdpr.DeleteRequest">
+    <Value>This message template is used when customer create a new request to delete account. The message is received by a store owner.</Value>
+  </LocaleResource>
   <LocaleResource Name="Admin.ContentManagement.MessageTemplates.Description.Forums.NewForumPost">
     <Value>This message template is used when a new forum post in certain forum topic is created. The message is received by a store owner.</Value>
   </LocaleResource>
@@ -11876,6 +11930,9 @@
   </LocaleResource>
   <LocaleResource Name="Admin.Customers.Customers.Fields.Gender.Male">
     <Value>Male</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Customers.Customers.Fields.Gender.Neutral">
+      <Value>Neutral</Value>
   </LocaleResource>
   <LocaleResource Name="Admin.Customers.Customers.Fields.IPAddress">
     <Value>IP Address</Value>
@@ -17313,6 +17370,21 @@
   <LocaleResource Name="Enums.Nop.Core.Domain.Logging.LogLevel.Warning">
     <Value>Warning</Value>
   </LocaleResource>
+  <LocaleResource Name="Enums.Nop.Core.Domain.Messages.EmailAuthenticationMethod.None">
+    <Value>No authentication</Value>
+  </LocaleResource>
+  <LocaleResource Name="Enums.Nop.Core.Domain.Messages.EmailAuthenticationMethod.Ntlm">
+    <Value>NTLM (the default network credentials)</Value>
+  </LocaleResource>
+  <LocaleResource Name="Enums.Nop.Core.Domain.Messages.EmailAuthenticationMethod.Login">
+    <Value>Login/Password</Value>
+  </LocaleResource>
+  <LocaleResource Name="Enums.Nop.Core.Domain.Messages.EmailAuthenticationMethod.GmailOAuth2">
+    <Value>Google (OAuth2)</Value>
+  </LocaleResource>
+  <LocaleResource Name="Enums.Nop.Core.Domain.Messages.EmailAuthenticationMethod.MicrosoftOAuth2">
+    <Value>Microsoft (OAuth2)</Value>
+  </LocaleResource>
   <LocaleResource Name="Enums.Nop.Core.Domain.Messages.MessageDelayPeriod.Days">
     <Value>Days</Value>
   </LocaleResource>
@@ -18615,9 +18687,6 @@
   <LocaleResource Name="Permission.AccessAdminPanel">
     <Value>Access admin area</Value>
   </LocaleResource>
-  <LocaleResource Name="Permission.AccessProfiling">
-    <Value>Public store. Access MiniProfiler results</Value>
-  </LocaleResource>
   <LocaleResource Name="Permission.AccessWebService">
     <Value>Plugins. Access Web Service</Value>
   </LocaleResource>
@@ -18655,7 +18724,7 @@
     <Value>Admin area. Manage Affiliates</Value>
   </LocaleResource>
   <LocaleResource Name="Permission.ManageAppSettings">
-    <Value>Admin area. Manage App Setting</Value>
+    <Value>Admin area. Manage App Settings</Value>
   </LocaleResource>
   <LocaleResource Name="Permission.ManageAttributes">
     <Value>Admin area. Manage Attributes</Value>
