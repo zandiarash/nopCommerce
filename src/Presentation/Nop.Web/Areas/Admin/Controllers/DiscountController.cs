@@ -73,11 +73,9 @@ public partial class DiscountController : BaseAdminController
         return RedirectToAction("List");
     }
 
+    [CheckPermission(StandardPermission.Promotions.DISCOUNTS_VIEW)]
     public virtual async Task<IActionResult> List()
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageDiscounts))
-            return AccessDeniedView();
-
         //whether discounts are ignored
         if (_catalogSettings.IgnoreDiscounts)
             _notificationService.WarningNotification(await _localizationService.GetResourceAsync("Admin.Promotions.Discounts.IgnoreDiscounts.Warning"));
@@ -89,22 +87,18 @@ public partial class DiscountController : BaseAdminController
     }
 
     [HttpPost]
+    [CheckPermission(StandardPermission.Promotions.DISCOUNTS_VIEW)]
     public virtual async Task<IActionResult> List(DiscountSearchModel searchModel)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageDiscounts))
-            return await AccessDeniedDataTablesJson();
-
         //prepare model
         var model = await _discountModelFactory.PrepareDiscountListModelAsync(searchModel);
 
         return Json(model);
     }
 
+    [CheckPermission(StandardPermission.Promotions.DISCOUNTS_CREATE_EDIT_DELETE)]
     public virtual async Task<IActionResult> Create()
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageDiscounts))
-            return AccessDeniedView();
-
         //prepare model
         var model = await _discountModelFactory.PrepareDiscountModelAsync(new DiscountModel(), null);
 
@@ -112,11 +106,9 @@ public partial class DiscountController : BaseAdminController
     }
 
     [HttpPost, ParameterBasedOnFormName("save-continue", "continueEditing")]
+    [CheckPermission(StandardPermission.Promotions.DISCOUNTS_CREATE_EDIT_DELETE)]
     public virtual async Task<IActionResult> Create(DiscountModel model, bool continueEditing)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageDiscounts))
-            return AccessDeniedView();
-
         if (ModelState.IsValid)
         {
             var discount = model.ToEntity<Discount>();
@@ -141,11 +133,9 @@ public partial class DiscountController : BaseAdminController
         return View(model);
     }
 
+    [CheckPermission(StandardPermission.Promotions.DISCOUNTS_VIEW)]
     public virtual async Task<IActionResult> Edit(int id)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageDiscounts))
-            return AccessDeniedView();
-
         //try to get a discount with the specified id
         var discount = await _discountService.GetDiscountByIdAsync(id);
         if (discount == null)
@@ -158,11 +148,9 @@ public partial class DiscountController : BaseAdminController
     }
 
     [HttpPost, ParameterBasedOnFormName("save-continue", "continueEditing")]
+    [CheckPermission(StandardPermission.Promotions.DISCOUNTS_CREATE_EDIT_DELETE)]
     public virtual async Task<IActionResult> Edit(DiscountModel model, bool continueEditing)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageDiscounts))
-            return AccessDeniedView();
-
         //try to get a discount with the specified id
         var discount = await _discountService.GetDiscountByIdAsync(model.Id);
         if (discount == null)
@@ -213,11 +201,9 @@ public partial class DiscountController : BaseAdminController
     }
 
     [HttpPost]
+    [CheckPermission(StandardPermission.Promotions.DISCOUNTS_CREATE_EDIT_DELETE)]
     public virtual async Task<IActionResult> Delete(int id)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageDiscounts))
-            return AccessDeniedView();
-
         //try to get a discount with the specified id
         var discount = await _discountService.GetDiscountByIdAsync(id);
         if (discount == null)
@@ -227,10 +213,6 @@ public partial class DiscountController : BaseAdminController
         var products = await _productService.GetProductsWithAppliedDiscountAsync(discount.Id, true);
 
         await _discountService.DeleteDiscountAsync(discount);
-
-        //update "HasDiscountsApplied" properties
-        foreach (var p in products)
-            await _productService.UpdateHasDiscountsAppliedAsync(p);
 
         //activity log
         await _customerActivityService.InsertActivityAsync("DeleteDiscount",
@@ -245,30 +227,26 @@ public partial class DiscountController : BaseAdminController
 
     #region Discount requirements
 
+    [CheckPermission(StandardPermission.Promotions.DISCOUNTS_VIEW)]
     public virtual async Task<IActionResult> GetDiscountRequirementConfigurationUrl(string systemName, int discountId, int? discountRequirementId)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageDiscounts))
-            return AccessDeniedView();
-
         ArgumentException.ThrowIfNullOrEmpty(systemName);
 
         var discountRequirementRule = await _discountPluginManager.LoadPluginBySystemNameAsync(systemName)
-                                      ?? throw new ArgumentException("Discount requirement rule could not be loaded");
+            ?? throw new ArgumentException("Discount requirement rule could not be loaded");
 
         var discount = await _discountService.GetDiscountByIdAsync(discountId)
-                       ?? throw new ArgumentException("Discount could not be loaded");
+            ?? throw new ArgumentException("Discount could not be loaded");
 
         var url = discountRequirementRule.GetConfigurationUrl(discount.Id, discountRequirementId);
 
         return Json(new { url });
     }
 
+    [CheckPermission(StandardPermission.Promotions.DISCOUNTS_VIEW)]
     public virtual async Task<IActionResult> GetDiscountRequirements(int discountId, int discountRequirementId,
         int? parentId, int? interactionTypeId, bool deleteRequirement)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageDiscounts))
-            return AccessDeniedView();
-
         var requirements = new List<DiscountRequirementRuleModel>();
 
         var discount = await _discountService.GetDiscountByIdAsync(discountId);
@@ -352,11 +330,9 @@ public partial class DiscountController : BaseAdminController
         return Json(new { Requirements = requirements, AvailableGroups = availableRequirementGroups });
     }
 
+    [CheckPermission(StandardPermission.Promotions.DISCOUNTS_CREATE_EDIT_DELETE)]
     public virtual async Task<IActionResult> AddNewGroup(int discountId, string name)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageDiscounts))
-            return AccessDeniedView();
-
         var discount = await _discountService.GetDiscountByIdAsync(discountId) ?? throw new ArgumentException("Discount could not be loaded");
 
         var defaultGroup = (await _discountService.GetAllDiscountRequirementsAsync(discount.Id, true)).FirstOrDefault(requirement => requirement.IsGroup);
@@ -417,14 +393,12 @@ public partial class DiscountController : BaseAdminController
     #region Applied to products
 
     [HttpPost]
+    [CheckPermission(StandardPermission.Promotions.DISCOUNTS_VIEW)]
     public virtual async Task<IActionResult> ProductList(DiscountProductSearchModel searchModel)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageDiscounts))
-            return await AccessDeniedDataTablesJson();
-
         //try to get a discount with the specified id
         var discount = await _discountService.GetDiscountByIdAsync(searchModel.DiscountId)
-                       ?? throw new ArgumentException("No discount found with the specified id");
+            ?? throw new ArgumentException("No discount found with the specified id");
 
         //prepare model
         var model = await _discountModelFactory.PrepareDiscountProductListModelAsync(searchModel, discount);
@@ -432,34 +406,29 @@ public partial class DiscountController : BaseAdminController
         return Json(model);
     }
 
+    [CheckPermission(StandardPermission.Promotions.DISCOUNTS_CREATE_EDIT_DELETE)]
     public virtual async Task<IActionResult> ProductDelete(int discountId, int productId)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageDiscounts))
-            return AccessDeniedView();
-
         //try to get a discount with the specified id
         var discount = await _discountService.GetDiscountByIdAsync(discountId)
-                       ?? throw new ArgumentException("No discount found with the specified id", nameof(discountId));
+            ?? throw new ArgumentException("No discount found with the specified id", nameof(discountId));
 
         //try to get a product with the specified id
         var product = await _productService.GetProductByIdAsync(productId)
-                      ?? throw new ArgumentException("No product found with the specified id", nameof(productId));
+            ?? throw new ArgumentException("No product found with the specified id", nameof(productId));
 
         //remove discount
         if (await _productService.GetDiscountAppliedToProductAsync(product.Id, discount.Id) is DiscountProductMapping discountProductMapping)
             await _productService.DeleteDiscountProductMappingAsync(discountProductMapping);
 
         await _productService.UpdateProductAsync(product);
-        await _productService.UpdateHasDiscountsAppliedAsync(product);
 
         return new NullJsonResult();
     }
 
+    [CheckPermission(StandardPermission.Promotions.DISCOUNTS_CREATE_EDIT_DELETE)]
     public virtual async Task<IActionResult> ProductAddPopup(int discountId)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageDiscounts))
-            return AccessDeniedView();
-
         //prepare model
         var model = await _discountModelFactory.PrepareAddProductToDiscountSearchModelAsync(new AddProductToDiscountSearchModel());
 
@@ -467,11 +436,9 @@ public partial class DiscountController : BaseAdminController
     }
 
     [HttpPost]
+    [CheckPermission(StandardPermission.Promotions.DISCOUNTS_CREATE_EDIT_DELETE)]
     public virtual async Task<IActionResult> ProductAddPopupList(AddProductToDiscountSearchModel searchModel)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageDiscounts))
-            return await AccessDeniedDataTablesJson();
-
         //prepare model
         var model = await _discountModelFactory.PrepareAddProductToDiscountListModelAsync(searchModel);
 
@@ -480,14 +447,12 @@ public partial class DiscountController : BaseAdminController
 
     [HttpPost]
     [FormValueRequired("save")]
+    [CheckPermission(StandardPermission.Promotions.DISCOUNTS_CREATE_EDIT_DELETE)]
     public virtual async Task<IActionResult> ProductAddPopup(AddProductToDiscountModel model)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageDiscounts))
-            return AccessDeniedView();
-
         //try to get a discount with the specified id
         var discount = await _discountService.GetDiscountByIdAsync(model.DiscountId)
-                       ?? throw new ArgumentException("No discount found with the specified id");
+            ?? throw new ArgumentException("No discount found with the specified id");
 
         var selectedProducts = await _productService.GetProductsByIdsAsync(model.SelectedProductIds.ToArray());
         if (selectedProducts.Any())
@@ -498,7 +463,6 @@ public partial class DiscountController : BaseAdminController
                     await _productService.InsertDiscountProductMappingAsync(new DiscountProductMapping { EntityId = product.Id, DiscountId = discount.Id });
 
                 await _productService.UpdateProductAsync(product);
-                await _productService.UpdateHasDiscountsAppliedAsync(product);
             }
         }
 
@@ -512,14 +476,12 @@ public partial class DiscountController : BaseAdminController
     #region Applied to categories
 
     [HttpPost]
+    [CheckPermission(StandardPermission.Promotions.DISCOUNTS_VIEW)]
     public virtual async Task<IActionResult> CategoryList(DiscountCategorySearchModel searchModel)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageDiscounts))
-            return await AccessDeniedDataTablesJson();
-
         //try to get a discount with the specified id
         var discount = await _discountService.GetDiscountByIdAsync(searchModel.DiscountId)
-                       ?? throw new ArgumentException("No discount found with the specified id");
+            ?? throw new ArgumentException("No discount found with the specified id");
 
         //prepare model
         var model = await _discountModelFactory.PrepareDiscountCategoryListModelAsync(searchModel, discount);
@@ -527,18 +489,16 @@ public partial class DiscountController : BaseAdminController
         return Json(model);
     }
 
+    [CheckPermission(StandardPermission.Promotions.DISCOUNTS_CREATE_EDIT_DELETE)]
     public virtual async Task<IActionResult> CategoryDelete(int discountId, int categoryId)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageDiscounts))
-            return AccessDeniedView();
-
         //try to get a discount with the specified id
         var discount = await _discountService.GetDiscountByIdAsync(discountId)
-                       ?? throw new ArgumentException("No discount found with the specified id", nameof(discountId));
+            ?? throw new ArgumentException("No discount found with the specified id", nameof(discountId));
 
         //try to get a category with the specified id
         var category = await _categoryService.GetCategoryByIdAsync(categoryId)
-                       ?? throw new ArgumentException("No category found with the specified id", nameof(categoryId));
+            ?? throw new ArgumentException("No category found with the specified id", nameof(categoryId));
 
         //remove discount
         if (await _categoryService.GetDiscountAppliedToCategoryAsync(category.Id, discount.Id) is DiscountCategoryMapping mapping)
@@ -549,11 +509,9 @@ public partial class DiscountController : BaseAdminController
         return new NullJsonResult();
     }
 
+    [CheckPermission(StandardPermission.Promotions.DISCOUNTS_CREATE_EDIT_DELETE)]
     public virtual async Task<IActionResult> CategoryAddPopup(int discountId)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageDiscounts))
-            return AccessDeniedView();
-
         //prepare model
         var model = await _discountModelFactory.PrepareAddCategoryToDiscountSearchModelAsync(new AddCategoryToDiscountSearchModel());
 
@@ -561,11 +519,9 @@ public partial class DiscountController : BaseAdminController
     }
 
     [HttpPost]
+    [CheckPermission(StandardPermission.Promotions.DISCOUNTS_CREATE_EDIT_DELETE)]
     public virtual async Task<IActionResult> CategoryAddPopupList(AddCategoryToDiscountSearchModel searchModel)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageDiscounts))
-            return await AccessDeniedDataTablesJson();
-
         //prepare model
         var model = await _discountModelFactory.PrepareAddCategoryToDiscountListModelAsync(searchModel);
 
@@ -574,14 +530,12 @@ public partial class DiscountController : BaseAdminController
 
     [HttpPost]
     [FormValueRequired("save")]
+    [CheckPermission(StandardPermission.Promotions.DISCOUNTS_CREATE_EDIT_DELETE)]
     public virtual async Task<IActionResult> CategoryAddPopup(AddCategoryToDiscountModel model)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageDiscounts))
-            return AccessDeniedView();
-
         //try to get a discount with the specified id
         var discount = await _discountService.GetDiscountByIdAsync(model.DiscountId)
-                       ?? throw new ArgumentException("No discount found with the specified id");
+            ?? throw new ArgumentException("No discount found with the specified id");
 
         foreach (var id in model.SelectedCategoryIds)
         {
@@ -605,14 +559,12 @@ public partial class DiscountController : BaseAdminController
     #region Applied to manufacturers
 
     [HttpPost]
+    [CheckPermission(StandardPermission.Promotions.DISCOUNTS_VIEW)]
     public virtual async Task<IActionResult> ManufacturerList(DiscountManufacturerSearchModel searchModel)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageDiscounts))
-            return await AccessDeniedDataTablesJson();
-
         //try to get a discount with the specified id
         var discount = await _discountService.GetDiscountByIdAsync(searchModel.DiscountId)
-                       ?? throw new ArgumentException("No discount found with the specified id");
+            ?? throw new ArgumentException("No discount found with the specified id");
 
         //prepare model
         var model = await _discountModelFactory.PrepareDiscountManufacturerListModelAsync(searchModel, discount);
@@ -620,18 +572,16 @@ public partial class DiscountController : BaseAdminController
         return Json(model);
     }
 
+    [CheckPermission(StandardPermission.Promotions.DISCOUNTS_CREATE_EDIT_DELETE)]
     public virtual async Task<IActionResult> ManufacturerDelete(int discountId, int manufacturerId)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageDiscounts))
-            return AccessDeniedView();
-
         //try to get a discount with the specified id
         var discount = await _discountService.GetDiscountByIdAsync(discountId)
-                       ?? throw new ArgumentException("No discount found with the specified id", nameof(discountId));
+            ?? throw new ArgumentException("No discount found with the specified id", nameof(discountId));
 
         //try to get a manufacturer with the specified id
         var manufacturer = await _manufacturerService.GetManufacturerByIdAsync(manufacturerId)
-                           ?? throw new ArgumentException("No manufacturer found with the specified id", nameof(manufacturerId));
+            ?? throw new ArgumentException("No manufacturer found with the specified id", nameof(manufacturerId));
 
         //remove discount
         if (await _manufacturerService.GetDiscountAppliedToManufacturerAsync(manufacturer.Id, discount.Id) is DiscountManufacturerMapping discountManufacturerMapping)
@@ -642,11 +592,9 @@ public partial class DiscountController : BaseAdminController
         return new NullJsonResult();
     }
 
+    [CheckPermission(StandardPermission.Promotions.DISCOUNTS_CREATE_EDIT_DELETE)]
     public virtual async Task<IActionResult> ManufacturerAddPopup(int discountId)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageDiscounts))
-            return AccessDeniedView();
-
         //prepare model
         var model = await _discountModelFactory.PrepareAddManufacturerToDiscountSearchModelAsync(new AddManufacturerToDiscountSearchModel());
 
@@ -654,11 +602,9 @@ public partial class DiscountController : BaseAdminController
     }
 
     [HttpPost]
+    [CheckPermission(StandardPermission.Promotions.DISCOUNTS_CREATE_EDIT_DELETE)]
     public virtual async Task<IActionResult> ManufacturerAddPopupList(AddManufacturerToDiscountSearchModel searchModel)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageDiscounts))
-            return await AccessDeniedDataTablesJson();
-
         //prepare model
         var model = await _discountModelFactory.PrepareAddManufacturerToDiscountListModelAsync(searchModel);
 
@@ -667,14 +613,12 @@ public partial class DiscountController : BaseAdminController
 
     [HttpPost]
     [FormValueRequired("save")]
+    [CheckPermission(StandardPermission.Promotions.DISCOUNTS_CREATE_EDIT_DELETE)]
     public virtual async Task<IActionResult> ManufacturerAddPopup(AddManufacturerToDiscountModel model)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageDiscounts))
-            return AccessDeniedView();
-
         //try to get a discount with the specified id
         var discount = await _discountService.GetDiscountByIdAsync(model.DiscountId)
-                       ?? throw new ArgumentException("No discount found with the specified id");
+            ?? throw new ArgumentException("No discount found with the specified id");
 
         foreach (var id in model.SelectedManufacturerIds)
         {
@@ -698,14 +642,12 @@ public partial class DiscountController : BaseAdminController
     #region Discount usage history
 
     [HttpPost]
+    [CheckPermission(StandardPermission.Promotions.DISCOUNTS_VIEW)]
     public virtual async Task<IActionResult> UsageHistoryList(DiscountUsageHistorySearchModel searchModel)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageDiscounts))
-            return await AccessDeniedDataTablesJson();
-
         //try to get a discount with the specified id
         var discount = await _discountService.GetDiscountByIdAsync(searchModel.DiscountId)
-                       ?? throw new ArgumentException("No discount found with the specified id");
+            ?? throw new ArgumentException("No discount found with the specified id");
 
         //prepare model
         var model = await _discountModelFactory.PrepareDiscountUsageHistoryListModelAsync(searchModel, discount);
@@ -714,18 +656,16 @@ public partial class DiscountController : BaseAdminController
     }
 
     [HttpPost]
+    [CheckPermission(StandardPermission.Promotions.DISCOUNTS_CREATE_EDIT_DELETE)]
     public virtual async Task<IActionResult> UsageHistoryDelete(int discountId, int id)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageDiscounts))
-            return AccessDeniedView();
-
         //try to get a discount with the specified id
         _ = await _discountService.GetDiscountByIdAsync(discountId)
             ?? throw new ArgumentException("No discount found with the specified id", nameof(discountId));
 
         //try to get a discount usage history entry with the specified id
         var discountUsageHistoryEntry = await _discountService.GetDiscountUsageHistoryByIdAsync(id)
-                                        ?? throw new ArgumentException("No discount usage history entry found with the specified id", nameof(id));
+            ?? throw new ArgumentException("No discount usage history entry found with the specified id", nameof(id));
 
         await _discountService.DeleteDiscountUsageHistoryAsync(discountUsageHistoryEntry);
 

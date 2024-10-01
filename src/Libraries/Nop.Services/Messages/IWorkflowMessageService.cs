@@ -254,6 +254,18 @@ public partial interface IWorkflowMessageService
     /// The task result contains the queued email identifier
     /// </returns>
     Task<IList<int>> SendOrderCancelledCustomerNotificationAsync(Order order, int languageId);
+    
+    /// <summary>
+    /// Sends an order cancelled notification to a vendor
+    /// </summary>
+    /// <param name="order">Order instance</param>
+    /// <param name="vendor">Vendor instance</param>
+    /// <param name="languageId">Message language identifier</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the queued email identifier
+    /// </returns>
+    Task<IList<int>> SendOrderCancelledVendorNotificationAsync(Order order, Vendor vendor, int languageId);
 
     /// <summary>
     /// Sends an order refunded notification to a store owner
@@ -331,23 +343,21 @@ public partial interface IWorkflowMessageService
     /// Sends a newsletter subscription activation message
     /// </summary>
     /// <param name="subscription">Newsletter subscription</param>
-    /// <param name="languageId">Language identifier</param>
     /// <returns>
     /// A task that represents the asynchronous operation
     /// The task result contains the queued email identifier
     /// </returns>
-    Task<IList<int>> SendNewsLetterSubscriptionActivationMessageAsync(NewsLetterSubscription subscription, int languageId);
+    Task<IList<int>> SendNewsLetterSubscriptionActivationMessageAsync(NewsLetterSubscription subscription);
 
     /// <summary>
     /// Sends a newsletter subscription deactivation message
     /// </summary>
     /// <param name="subscription">Newsletter subscription</param>
-    /// <param name="languageId">Language identifier</param>
     /// <returns>
     /// A task that represents the asynchronous operation
     /// The task result contains the queued email identifier
     /// </returns>
-    Task<IList<int>> SendNewsLetterSubscriptionDeactivationMessageAsync(NewsLetterSubscription subscription, int languageId);
+    Task<IList<int>> SendNewsLetterSubscriptionDeactivationMessageAsync(NewsLetterSubscription subscription);
 
     #endregion
 
@@ -659,6 +669,7 @@ public partial interface IWorkflowMessageService
     /// <param name="fromEmail">Sender email. If specified, then it overrides passed "emailAccount" details</param>
     /// <param name="fromName">Sender name. If specified, then it overrides passed "emailAccount" details</param>
     /// <param name="subject">Subject. If specified, then it overrides subject of a message template</param>
+    /// <param name="ignoreDelayBeforeSend">A value indicating whether to ignore the delay before sending message</param>
     /// <returns>
     /// A task that represents the asynchronous operation
     /// The task result contains the queued email identifier
@@ -668,7 +679,8 @@ public partial interface IWorkflowMessageService
         string toEmailAddress, string toName,
         string attachmentFilePath = null, string attachmentFileName = null,
         string replyToEmailAddress = null, string replyToName = null,
-        string fromEmail = null, string fromName = null, string subject = null);
+        string fromEmail = null, string fromName = null, string subject = null,
+        bool ignoreDelayBeforeSend = false);
 
     #endregion
 }

@@ -46,8 +46,11 @@ public class UPSService
 
     #region Fields
 
+    private readonly CurrencySettings _currencySettings;
+
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ICountryService _countryService;
+    private readonly ICurrencyService _currencyService;
     private readonly ILocalizationService _localizationService;
     private readonly ILogger _logger;
     private readonly IMeasureService _measureService;
@@ -68,8 +71,10 @@ public class UPSService
 
     #region Ctor
 
-    public UPSService(IHttpClientFactory httpClientFactory,
+    public UPSService(CurrencySettings currencySettings,
+        IHttpClientFactory httpClientFactory,
         ICountryService countryService,
+        ICurrencyService currencyService,
         ILocalizationService localizationService,
         ILogger logger,
         IMeasureService measureService,
@@ -79,8 +84,10 @@ public class UPSService
         IWorkContext workContext,
         UPSSettings upsSettings)
     {
+        _currencySettings = currencySettings;
         _httpClientFactory = httpClientFactory;
         _countryService = countryService;
+        _currencyService = currencyService;
         _localizationService = localizationService;
         _logger = logger;
         _measureService = measureService;
@@ -306,9 +313,14 @@ public class UPSService
         {
             Request = new RateRequest_Request
             {
-                //used to define the request type
-                //Shop - the server validates the shipment, and returns rates for all UPS products from the ShipFrom to the ShipTo addresses
-                RequestOption = "Shop"
+                //used to define the request type.
+                //valid values:
+                //  * Rate = the server rates(The default Request option is Rate if a Request Option is not provided).
+                //  * Shop = the server validates the shipment, and returns rates for all UPS products from the ShipFrom to the ShipTo addresses.
+                //  * Ratetimeintransit = the server rates with transit time information
+                //  * Shoptimeintransit = the server validates the shipment, and returns rates and transit times for all UPS products from the ShipFrom to the ShipTo addresses.
+                //Rate is the only valid request option for UPS Ground Freight Pricing requests.
+                RequestOption = "Shoptimeintransit"
             }
         };
 
@@ -330,7 +342,7 @@ public class UPSService
         {
             AddressLine = new[] { shippingOptionRequest.AddressFrom },
             City = shippingOptionRequest.CityFrom,
-            StateProvinceCode = stateCodeFrom ,
+            StateProvinceCode = stateCodeFrom,
             CountryCode = countryCodeFrom,
             PostalCode = shippingOptionRequest.ZipPostalCodeFrom
         };
@@ -360,6 +372,21 @@ public class UPSService
             ShipTo = new Shipment_ShipTo
             {
                 Address = addressToDetails
+            },
+            DeliveryTimeInformation = new Shipment_DeliveryTimeInformation
+            {
+                //valid values are:
+                //  * 02 - Document only
+                //  * 03 - Non-Document
+                //  * 04 - WWEF Pallet
+                //  * 07 - Domestic Pallet
+                //if 04 is included, Worldwide Express Freight and UPS Worldwide Express Freight Midday services (if applicable)
+                //will be included in the response.
+                PackageBillType = "03",
+                Pickup = new DeliveryTimeInformation_Pickup
+                {
+                    Date = DateTime.UtcNow.ToLocalTime().Date.AddDays(1).ToString("yyyyMMdd"),
+                }
             }
         };
 
@@ -377,7 +404,7 @@ public class UPSService
         }
 
         //set negotiated rates details
-        if (!string.IsNullOrEmpty(_upsSettings.AccountNumber) && !string.IsNullOrEmpty(stateCodeFrom) && !string.IsNullOrEmpty(stateCodeTo))
+        if (!string.IsNullOrEmpty(_upsSettings.AccountNumber) && !string.IsNullOrEmpty(stateCodeTo))
             request.Shipment.ShipmentRatingOptions = new Shipment_ShipmentRatingOptions
             {
                 NegotiatedRatesIndicator = string.Empty,
@@ -399,6 +426,23 @@ public class UPSService
             _ => (await GetPackagesByDimensionsAsync(shippingOptionRequest)).ToArray()
         };
 
+        request.Shipment.ShipmentTotalWeight = new Shipment_ShipmentTotalWeight
+        {
+            UnitOfMeasurement = new ShipmentTotalWeight_UnitOfMeasurement
+            {
+                Code = _upsSettings.WeightType,
+                Description = _upsSettings.WeightType
+            },
+            Weight = request.Shipment.Package.Sum(x => decimal.TryParse(x.PackageWeight.Weight, out var wt) ? wt : 0).ToString()
+        };
+
+        var currencyCode = (await _currencyService.GetCurrencyByIdAsync(_currencySettings.PrimaryStoreCurrencyId))?.CurrencyCode;
+        request.Shipment.InvoiceLineTotal = new Shipment_InvoiceLineTotal
+        {
+            CurrencyCode = currencyCode,
+            MonetaryValue = shippingOptionRequest.Items.Sum(x => x.Product.Price * x.GetQuantity()).ToString("F2")
+        };
+
         return request;
     }
 
@@ -414,7 +458,7 @@ public class UPSService
     /// A task that represents the asynchronous operation
     /// The task result contains the package details
     /// </returns>
-    private Shipment_Package CreatePackage(decimal width, decimal length, decimal height, decimal weight, decimal insuranceAmount)
+    private async Task<Shipment_Package> CreatePackageAsync(decimal width, decimal length, decimal height, decimal weight, decimal insuranceAmount)
     {
         //set package details
         var package = new Shipment_Package
@@ -442,22 +486,21 @@ public class UPSService
         };
 
         //set insurance details
-        //TODO: found new way for insurance
-        /*if (_upsSettings.InsurePackage && insuranceAmount > decimal.Zero)
+        if (_upsSettings.InsurePackage && insuranceAmount > decimal.Zero)
         {
             var currencyCode = (await _currencyService.GetCurrencyByIdAsync(_currencySettings.PrimaryStoreCurrencyId))?.CurrencyCode;
             package.PackageServiceOptions = new Package_PackageServiceOptions
             {
-                Insurance = new UPSRate.InsuranceType
+                Insurance = new PackageServiceOptions_Insurance
                 {
-                    BasicFlexibleParcelIndicator = new UPSRate.InsuranceValueType
+                    BasicFlexibleParcelIndicator = new Insurance_BasicFlexibleParcelIndicator
                     {
                         CurrencyCode = currencyCode,
                         MonetaryValue = insuranceAmount.ToString("0.00", CultureInfo.InvariantCulture)
                     }
                 }
             };
-        }*/
+        }
 
         return package;
     }
@@ -480,13 +523,11 @@ public class UPSService
 
             var insuranceAmount = 0;
             if (_upsSettings.InsurePackage)
-            {
                 //The maximum declared amount per package: 50000 USD.
                 insuranceAmount = Convert.ToInt32(packageItem.Product.Price);
-            }
 
             //create packages according to item quantity
-            var package = CreatePackage(width, length, height, weight, insuranceAmount);
+            var package = await CreatePackageAsync(width, length, height, weight, insuranceAmount);
 
             return Enumerable.Repeat(package, packageItem.GetQuantity());
         }).ToListAsync();
@@ -526,7 +567,7 @@ public class UPSService
                 insuranceAmount = Convert.ToInt32(subTotalWithoutDiscount);
             }
 
-            return new[] { CreatePackage(width, length, height, weight, insuranceAmount) };
+            return new[] { await CreatePackageAsync(width, length, height, weight, insuranceAmount) };
         }
 
         //get total packages number according to package limits
@@ -559,7 +600,7 @@ public class UPSService
         }
 
         //create packages according to calculated value
-        var package = CreatePackage(width, length, height, weight, insuranceAmountPerPackage);
+        var package = await CreatePackageAsync(width, length, height, weight, insuranceAmountPerPackage);
         return Enumerable.Repeat(package, totalPackages);
     }
 
@@ -648,8 +689,8 @@ public class UPSService
         }
 
         //create packages according to calculated value
-        var package = CreatePackage(width, length, height, weight / totalPackages, insuranceAmountPerPackage);
-            
+        var package = await CreatePackageAsync(width, length, height, weight / totalPackages, insuranceAmountPerPackage);
+
         return Enumerable.Repeat(package, totalPackages);
     }
 
@@ -664,7 +705,7 @@ public class UPSService
     private async Task<(decimal width, decimal length, decimal height)> GetDimensionsForSingleItemAsync(ShoppingCartItem item, Product product)
     {
         var items = new[] { new GetShippingOptionRequest.PackageItem(item, product, 1) };
-            
+
         return await GetDimensionsAsync(items);
     }
 
@@ -778,6 +819,14 @@ public class UPSService
                 return shippingOption;
             }).ToList(), null);
         }
+        catch (API.Rates.ApiException<ErrorResponse> exception)
+        {
+            //log errors
+            var message = $"Error while getting UPS rates{Environment.NewLine}{string.Join(", ", exception.Result.Response.Errors.Select(p=>$"{p.Code}: {p.Message}"))}";
+            await _logger.ErrorAsync(message, exception, shippingOptionRequest.Customer);
+
+            return (new List<ShippingOption>(), message);
+        }
         catch (Exception exception)
         {
             //log errors
@@ -835,11 +884,17 @@ public class UPSService
             //parse transit days
             int? transitDays = null;
 
-            var serviceSummary = rate.TimeInTransit?.ServiceSummary.FirstOrDefault();
+            var serviceSummary = rate.TimeInTransit?.ServiceSummary;
 
             if (serviceSummary != null)
-                if (!string.IsNullOrWhiteSpace(serviceSummary.EstimatedArrival.BusinessDaysInTransit) && int.TryParse(serviceSummary.EstimatedArrival.BusinessDaysInTransit, out var businessDaysInTransit))
+            {
+                if (!string.IsNullOrWhiteSpace(serviceSummary.EstimatedArrival.TotalTransitDays) &&
+                    int.TryParse(serviceSummary.EstimatedArrival.TotalTransitDays, out var totalTransitDays))
+                    transitDays = totalTransitDays;
+                else if (!string.IsNullOrEmpty(serviceSummary.EstimatedArrival.BusinessDaysInTransit) &&
+                         int.TryParse(serviceSummary.EstimatedArrival.BusinessDaysInTransit, out var businessDaysInTransit))
                     transitDays = businessDaysInTransit;
+            }
 
             //add shipping option based on service rate
             shippingOptions.Add(new ShippingOption

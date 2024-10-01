@@ -157,7 +157,8 @@ public partial class CheckoutAttributeController : BaseAdminController
                         //hence we won't be able to find a selected attribute
                         attributesXml = _checkoutAttributeParser.AddAttribute(null, attribute, string.IsNullOrEmpty(selectedValue) ? string.Empty : selectedValue);
                     }
-                        break;
+                    break;
+
                     case AttributeControlType.Checkboxes:
                     {
                         var selectedAttribute = model.ConditionModel.ConditionAttributes
@@ -173,7 +174,8 @@ public partial class CheckoutAttributeController : BaseAdminController
                         else
                             attributesXml = _checkoutAttributeParser.AddAttribute(null, attribute, string.Empty);
                     }
-                        break;
+                    break;
+
                     case AttributeControlType.ReadonlyCheckboxes:
                     case AttributeControlType.TextBox:
                     case AttributeControlType.MultilineTextbox:
@@ -198,11 +200,9 @@ public partial class CheckoutAttributeController : BaseAdminController
         return RedirectToAction("List");
     }
 
+    [CheckPermission(StandardPermission.Catalog.CHECKOUT_ATTRIBUTES_VIEW)]
     public virtual async Task<IActionResult> List()
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageAttributes))
-            return AccessDeniedView();
-
         //prepare model
         var model = await _checkoutAttributeModelFactory.PrepareCheckoutAttributeSearchModelAsync(new CheckoutAttributeSearchModel());
 
@@ -210,22 +210,18 @@ public partial class CheckoutAttributeController : BaseAdminController
     }
 
     [HttpPost]
+    [CheckPermission(StandardPermission.Catalog.CHECKOUT_ATTRIBUTES_VIEW)]
     public virtual async Task<IActionResult> List(CheckoutAttributeSearchModel searchModel)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageAttributes))
-            return await AccessDeniedDataTablesJson();
-
         //prepare model
         var model = await _checkoutAttributeModelFactory.PrepareCheckoutAttributeListModelAsync(searchModel);
 
         return Json(model);
     }
 
+    [CheckPermission(StandardPermission.Catalog.CHECKOUT_ATTRIBUTES_CREATE_EDIT_DELETE)]
     public virtual async Task<IActionResult> Create()
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageAttributes))
-            return AccessDeniedView();
-
         //prepare model
         var model = await _checkoutAttributeModelFactory.PrepareCheckoutAttributeModelAsync(new CheckoutAttributeModel(), null);
 
@@ -233,11 +229,9 @@ public partial class CheckoutAttributeController : BaseAdminController
     }
 
     [HttpPost, ParameterBasedOnFormName("save-continue", "continueEditing")]
+    [CheckPermission(StandardPermission.Catalog.CHECKOUT_ATTRIBUTES_CREATE_EDIT_DELETE)]
     public virtual async Task<IActionResult> Create(CheckoutAttributeModel model, bool continueEditing)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageAttributes))
-            return AccessDeniedView();
-
         if (ModelState.IsValid)
         {
             var checkoutAttribute = model.ToEntity<CheckoutAttribute>();
@@ -268,11 +262,9 @@ public partial class CheckoutAttributeController : BaseAdminController
         return View(model);
     }
 
+    [CheckPermission(StandardPermission.Catalog.CHECKOUT_ATTRIBUTES_VIEW)]
     public virtual async Task<IActionResult> Edit(int id)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageAttributes))
-            return AccessDeniedView();
-
         //try to get a checkout attribute with the specified id
         var checkoutAttribute = await _checkoutAttributeService.GetAttributeByIdAsync(id);
         if (checkoutAttribute == null)
@@ -285,11 +277,9 @@ public partial class CheckoutAttributeController : BaseAdminController
     }
 
     [HttpPost, ParameterBasedOnFormName("save-continue", "continueEditing")]
+    [CheckPermission(StandardPermission.Catalog.CHECKOUT_ATTRIBUTES_CREATE_EDIT_DELETE)]
     public virtual async Task<IActionResult> Edit(CheckoutAttributeModel model, bool continueEditing)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageAttributes))
-            return AccessDeniedView();
-
         //try to get a checkout attribute with the specified id
         var checkoutAttribute = await _checkoutAttributeService.GetAttributeByIdAsync(model.Id);
         if (checkoutAttribute == null)
@@ -327,11 +317,9 @@ public partial class CheckoutAttributeController : BaseAdminController
     }
 
     [HttpPost]
+    [CheckPermission(StandardPermission.Catalog.CHECKOUT_ATTRIBUTES_CREATE_EDIT_DELETE)]
     public virtual async Task<IActionResult> Delete(int id)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageAttributes))
-            return AccessDeniedView();
-
         //try to get a checkout attribute with the specified id
         var checkoutAttribute = await _checkoutAttributeService.GetAttributeByIdAsync(id);
         if (checkoutAttribute == null)
@@ -349,11 +337,9 @@ public partial class CheckoutAttributeController : BaseAdminController
     }
 
     [HttpPost]
+    [CheckPermission(StandardPermission.Catalog.CHECKOUT_ATTRIBUTES_CREATE_EDIT_DELETE)]
     public virtual async Task<IActionResult> DeleteSelected(ICollection<int> selectedIds)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageAttributes))
-            return AccessDeniedView();
-
         if (selectedIds == null || !selectedIds.Any())
             return NoContent();
 
@@ -375,14 +361,12 @@ public partial class CheckoutAttributeController : BaseAdminController
     #region Checkout attribute values
 
     [HttpPost]
+    [CheckPermission(StandardPermission.Catalog.CHECKOUT_ATTRIBUTES_VIEW)]
     public virtual async Task<IActionResult> ValueList(CheckoutAttributeValueSearchModel searchModel)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageAttributes))
-            return await AccessDeniedDataTablesJson();
-
         //try to get a checkout attribute with the specified id
         var checkoutAttribute = await _checkoutAttributeService.GetAttributeByIdAsync(searchModel.CheckoutAttributeId)
-                                ?? throw new ArgumentException("No checkout attribute found with the specified id");
+            ?? throw new ArgumentException("No checkout attribute found with the specified id");
 
         //prepare model
         var model = await _checkoutAttributeModelFactory.PrepareCheckoutAttributeValueListModelAsync(searchModel, checkoutAttribute);
@@ -390,11 +374,9 @@ public partial class CheckoutAttributeController : BaseAdminController
         return Json(model);
     }
 
+    [CheckPermission(StandardPermission.Catalog.CHECKOUT_ATTRIBUTES_CREATE_EDIT_DELETE)]
     public virtual async Task<IActionResult> ValueCreatePopup(int checkoutAttributeId)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageAttributes))
-            return AccessDeniedView();
-
         //try to get a checkout attribute with the specified id
         var checkoutAttribute = await _checkoutAttributeService.GetAttributeByIdAsync(checkoutAttributeId);
         if (checkoutAttribute == null)
@@ -408,11 +390,9 @@ public partial class CheckoutAttributeController : BaseAdminController
     }
 
     [HttpPost]
+    [CheckPermission(StandardPermission.Catalog.CHECKOUT_ATTRIBUTES_CREATE_EDIT_DELETE)]
     public virtual async Task<IActionResult> ValueCreatePopup(CheckoutAttributeValueModel model)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageAttributes))
-            return AccessDeniedView();
-
         //try to get a checkout attribute with the specified id
         var checkoutAttribute = await _checkoutAttributeService.GetAttributeByIdAsync(model.AttributeId);
         if (checkoutAttribute == null)
@@ -457,11 +437,9 @@ public partial class CheckoutAttributeController : BaseAdminController
         return View(model);
     }
 
+    [CheckPermission(StandardPermission.Catalog.CHECKOUT_ATTRIBUTES_VIEW)]
     public virtual async Task<IActionResult> ValueEditPopup(int id)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageAttributes))
-            return AccessDeniedView();
-
         //try to get a checkout attribute value with the specified id
         var checkoutAttributeValue = await _checkoutAttributeService.GetAttributeValueByIdAsync(id);
         if (checkoutAttributeValue == null)
@@ -479,11 +457,9 @@ public partial class CheckoutAttributeController : BaseAdminController
     }
 
     [HttpPost]
+    [CheckPermission(StandardPermission.Catalog.CHECKOUT_ATTRIBUTES_CREATE_EDIT_DELETE)]
     public virtual async Task<IActionResult> ValueEditPopup(CheckoutAttributeValueModel model)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageAttributes))
-            return AccessDeniedView();
-
         //try to get a checkout attribute value with the specified id
         var checkoutAttributeValue = await _checkoutAttributeService.GetAttributeValueByIdAsync(model.Id);
         if (checkoutAttributeValue == null)
@@ -534,14 +510,12 @@ public partial class CheckoutAttributeController : BaseAdminController
     }
 
     [HttpPost]
+    [CheckPermission(StandardPermission.Catalog.CHECKOUT_ATTRIBUTES_CREATE_EDIT_DELETE)]
     public virtual async Task<IActionResult> ValueDelete(int id)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageAttributes))
-            return AccessDeniedView();
-
         //try to get a checkout attribute value with the specified id
         var checkoutAttributeValue = await _checkoutAttributeService.GetAttributeValueByIdAsync(id)
-                                     ?? throw new ArgumentException("No checkout attribute value found with the specified id", nameof(id));
+            ?? throw new ArgumentException("No checkout attribute value found with the specified id", nameof(id));
 
         await _checkoutAttributeService.DeleteAttributeValueAsync(checkoutAttributeValue);
 

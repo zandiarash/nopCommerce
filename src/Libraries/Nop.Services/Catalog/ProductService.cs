@@ -903,14 +903,23 @@ public partial class ProductService : IProductService
 
             //Set a flag which will to points need to search in localized properties. If showHidden doesn't set to true should be at least two published languages.
             var searchLocalizedValue = languageId > 0 && langs.Count >= 2 && (showHidden || langs.Count(l => l.Published) >= 2);
-            IQueryable<int> productsByKeywords;
+            var productsByKeywords = new List<int>().AsQueryable();
+            var runStandardSearch = activeSearchProvider is null || showHidden;
 
-            if (activeSearchProvider is not null && !showHidden)
+            try
             {
-                providerResults = await activeSearchProvider.SearchProductsAsync(keywords, searchLocalizedValue);
-                productsByKeywords = providerResults.AsQueryable();
+                if (!runStandardSearch)
+                {
+                    providerResults = await activeSearchProvider.SearchProductsAsync(keywords, searchLocalizedValue);
+                    productsByKeywords = providerResults.AsQueryable();
+                }
             }
-            else
+            catch
+            {
+                runStandardSearch = _catalogSettings.UseStandardSearchWhenSearchProviderThrowsException;
+            }
+
+            if (runStandardSearch)
             {
                 productsByKeywords =
                     from p in _productRepository.Table
@@ -1054,8 +1063,10 @@ public partial class ProductService : IProductService
             {
                 var productCategoryQuery =
                     from pc in _productCategoryRepository.Table
+                    join c in _categoryRepository.Table on pc.CategoryId equals c.Id
                     where (!excludeFeaturedProducts || !pc.IsFeaturedProduct) &&
                           categoryIds.Contains(pc.CategoryId)
+                    orderby c.DisplayOrder
                     group pc by pc.ProductId into pc
                     select new
                     {
@@ -1377,32 +1388,6 @@ public partial class ProductService : IProductService
             query = query.Where(p => p.VendorId == vendorId);
 
         return await query.ToListAsync();
-    }
-
-    /// <summary>
-    /// Update HasTierPrices property (used for performance optimization)
-    /// </summary>
-    /// <param name="product">Product</param>
-    /// <returns>A task that represents the asynchronous operation</returns>
-    public virtual async Task UpdateHasTierPricesPropertyAsync(Product product)
-    {
-        ArgumentNullException.ThrowIfNull(product);
-
-        product.HasTierPrices = (await GetTierPricesByProductAsync(product.Id)).Any();
-        await UpdateProductAsync(product);
-    }
-
-    /// <summary>
-    /// Update HasDiscountsApplied property (used for performance optimization)
-    /// </summary>
-    /// <param name="product">Product</param>
-    /// <returns>A task that represents the asynchronous operation</returns>
-    public virtual async Task UpdateHasDiscountsAppliedAsync(Product product)
-    {
-        ArgumentNullException.ThrowIfNull(product);
-
-        product.HasDiscountsApplied = _discountProductMappingRepository.Table.Any(dpm => dpm.EntityId == product.Id);
-        await UpdateProductAsync(product);
     }
 
     /// <summary>
@@ -2151,9 +2136,6 @@ public partial class ProductService : IProductService
         ArgumentNullException.ThrowIfNull(product);
         ArgumentNullException.ThrowIfNull(customer);
 
-        if (!product.HasTierPrices)
-            return null;
-
         //get actual tier prices
         return (await GetTierPricesByProductAsync(product.Id))
             .OrderBy(price => price.Quantity)
@@ -2171,11 +2153,9 @@ public partial class ProductService : IProductService
     /// <returns>A task that represents the asynchronous operation</returns>
     public virtual async Task<IList<TierPrice>> GetTierPricesByProductAsync(int productId)
     {
-        var query = _tierPriceRepository.Table.Where(tp => tp.ProductId == productId);
-
         return await _staticCacheManager.GetAsync(
             _staticCacheManager.PrepareKeyForDefaultCache(NopCatalogDefaults.TierPricesByProductCacheKey, productId),
-            async () => await query.ToListAsync());
+            async () => await _tierPriceRepository.Table.Where(tp => tp.ProductId == productId).ToListAsync());
     }
 
     /// <summary>
@@ -2236,9 +2216,6 @@ public partial class ProductService : IProductService
     {
         ArgumentNullException.ThrowIfNull(product);
         ArgumentNullException.ThrowIfNull(customer);
-
-        if (!product.HasTierPrices)
-            return null;
 
         //get the most suitable tier price based on the passed quantity
         return (await GetTierPricesAsync(product, customer, store))?.LastOrDefault(price => quantity >= price.Quantity);
@@ -2342,7 +2319,7 @@ public partial class ProductService : IProductService
     public virtual async Task<IPagedList<Product>> GetProductsWithAppliedDiscountAsync(int? discountId = null,
         bool showHidden = false, int pageIndex = 0, int pageSize = int.MaxValue)
     {
-        var products = _productRepository.Table.Where(product => product.HasDiscountsApplied);
+        var products = _productRepository.Table;
 
         if (discountId.HasValue)
             products = from product in products
@@ -2781,9 +2758,6 @@ public partial class ProductService : IProductService
         await foreach (var pdcm in mappingsWithProducts.ToAsyncEnumerable())
         {
             mappingsToDelete.Add(pdcm.dcm);
-
-            //update "HasDiscountsApplied" property
-            await UpdateHasDiscountsAppliedAsync(pdcm.product);
         }
         await _discountProductMappingRepository.DeleteAsync(mappingsToDelete);
     }

@@ -1,5 +1,8 @@
 ﻿using System.Net;
 using System.Text.RegularExpressions;
+using brevo_csharp.Api;
+using brevo_csharp.Client;
+using brevo_csharp.Model;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.Routing;
@@ -7,7 +10,6 @@ using Newtonsoft.Json;
 using Nop.Core;
 using Nop.Core.Domain.Localization;
 using Nop.Core.Domain.Messages;
-using Nop.Core.Domain.Orders;
 using Nop.Plugin.Misc.Brevo.Domain;
 using Nop.Services.Common;
 using Nop.Services.Configuration;
@@ -18,10 +20,7 @@ using Nop.Services.Localization;
 using Nop.Services.Logging;
 using Nop.Services.Messages;
 using Nop.Services.Stores;
-using sib_api_v3_sdk.Api;
-using sib_api_v3_sdk.Client;
-using sib_api_v3_sdk.Model;
-using static sib_api_v3_sdk.Model.GetAttributesAttributes;
+using static brevo_csharp.Model.GetAttributesAttributes;
 
 namespace Nop.Plugin.Misc.Brevo.Services;
 
@@ -228,6 +227,8 @@ public partial class BrevoManager
                         break;
                 }
 
+                var languages = await _languageService.GetAllLanguagesAsync(storeId: storeId);
+
                 //prepare CSV 
                 var title =
                     $"{BrevoDefaults.EmailServiceAttribute};" +
@@ -294,10 +295,10 @@ public partial class BrevoManager
                         county = customer.County;
                         state = (await _stateProvinceService.GetStateProvinceByIdAsync(customer.StateProvinceId))?.Name;
                         fax = customer.Fax;
-                        language = await _languageService.GetLanguageByIdAsync(customer.LanguageId ?? 0);
                     }
 
-                    language ??= (await _languageService.GetAllLanguagesAsync(storeId: storeId)).FirstOrDefault();
+                    language = languages.FirstOrDefault(lang => lang.Id == (customer?.LanguageId ?? subscription.LanguageId))
+                        ?? languages.FirstOrDefault();
 
                     return $"{all}\n" +
                            $"{subscription.Email};" +
@@ -420,7 +421,7 @@ public partial class BrevoManager
         try
         {
             //create API client
-            var client = await CreateApiClientAsync(config => new AttributesApi(config));
+            var client = await CreateApiClientAsync(config => new ContactsApi(config));
 
             foreach (var attribute in attributes)
             {
@@ -526,7 +527,7 @@ public partial class BrevoManager
             catch (ApiException apiException)
             {
                 if (apiException.ErrorCode != 404)
-                {                        
+                {
                     await _logger.ErrorAsync($"Brevo error: {apiException.Message}.", apiException, await _workContext.GetCurrentCustomerAsync());
                     return;
                 }
@@ -577,10 +578,10 @@ public partial class BrevoManager
                 county = customer.County;
                 state = (await _stateProvinceService.GetStateProvinceByIdAsync(customer.StateProvinceId))?.Name;
                 fax = customer.Fax;
-                language = await _languageService.GetLanguageByIdAsync(customer.LanguageId ?? 0);
             }
 
-            language ??= (await _languageService.GetAllLanguagesAsync(storeId: subscription.StoreId)).FirstOrDefault();
+            language = await _languageService.GetLanguageByIdAsync(customer?.LanguageId ?? subscription.LanguageId)
+                ?? (await _languageService.GetAllLanguagesAsync(storeId: subscription.StoreId)).FirstOrDefault();
 
             var attributes = new Dictionary<string, string>
             {
@@ -778,7 +779,7 @@ public partial class BrevoManager
     /// </summary>
     /// <param name="order">Order</param>
     /// <returns>A task that represents the asynchronous operation</returns>
-    public async System.Threading.Tasks.Task UpdateContactAfterCompletingOrderAsync(Order order)
+    public async System.Threading.Tasks.Task UpdateContactAfterCompletingOrderAsync(Core.Domain.Orders.Order order)
     {
         try
         {
@@ -958,7 +959,7 @@ public partial class BrevoManager
         try
         {
             //create API client
-            var client = await CreateApiClientAsync(config => new AttributesApi(config));
+            var client = await CreateApiClientAsync(config => new ContactsApi(config));
 
             var attributes = await client.GetAttributesAsync();
             var allAttribytes = attributes.Attributes.Select(s => s.Name).ToList();
@@ -1049,7 +1050,7 @@ public partial class BrevoManager
         try
         {
             //create API client
-            var client = await CreateApiClientAsync(config => new AttributesApi(config));
+            var client = await CreateApiClientAsync(config => new ContactsApi(config));
 
             var attributes = await client.GetAttributesAsync();
             var attributeNames = attributes.Attributes.Select(s => s.Name).ToList();
@@ -1114,7 +1115,7 @@ public partial class BrevoManager
         try
         {
             //create API client
-            var client = await CreateApiClientAsync(config => new AttributesApi(config));
+            var client = await CreateApiClientAsync(config => new ContactsApi(config));
 
             //get already existing transactional attributes
             var attributes = await client.GetAttributesAsync();
@@ -1400,7 +1401,7 @@ public partial class BrevoManager
         }
 
         return string.Empty;
-    }        
+    }
 
     #endregion
 

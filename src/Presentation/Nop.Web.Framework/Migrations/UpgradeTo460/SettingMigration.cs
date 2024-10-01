@@ -399,16 +399,7 @@ public class SettingMigration : MigrationBase
             settingService.SaveSetting(pdfSettings, settings => settings.FontFamily);
 
             //delete old setting
-            settingRepository.Delete(setting => setting.Name.Equals($"{nameof(PdfSettings)}.FontFileName", StringComparison.CurrentCultureIgnoreCase));
-        }
-
-        var productEditorSettings = settingService.LoadSetting<ProductEditorSettings>();
-
-        //#1934
-        if (!settingService.SettingExists(productEditorSettings, settings => settings.DisplayAttributeCombinationImagesOnly))
-        {
-            productEditorSettings.DisplayAttributeCombinationImagesOnly = false;
-            settingService.SaveSetting(productEditorSettings, settings => settings.DisplayAttributeCombinationImagesOnly);
+            settingRepository.Delete(setting => setting.Name == $"{nameof(PdfSettings)}.FontFileName".ToLower());
         }
     }
 

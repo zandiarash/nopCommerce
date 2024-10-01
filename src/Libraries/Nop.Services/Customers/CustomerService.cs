@@ -11,6 +11,7 @@ using Nop.Core.Domain.Orders;
 using Nop.Core.Domain.Polls;
 using Nop.Core.Domain.Shipping;
 using Nop.Core.Domain.Tax;
+using Nop.Core.Events;
 using Nop.Core.Infrastructure;
 using Nop.Data;
 using Nop.Services.Common;
@@ -26,6 +27,7 @@ public partial class CustomerService : ICustomerService
     #region Fields
 
     protected readonly CustomerSettings _customerSettings;
+    protected readonly IEventPublisher _eventPublisher;
     protected readonly IGenericAttributeService _genericAttributeService;
     protected readonly INopDataProvider _dataProvider;
     protected readonly IRepository<Address> _customerAddressRepository;
@@ -55,6 +57,7 @@ public partial class CustomerService : ICustomerService
     #region Ctor
 
     public CustomerService(CustomerSettings customerSettings,
+        IEventPublisher eventPublisher,
         IGenericAttributeService genericAttributeService,
         INopDataProvider dataProvider,
         IRepository<Address> customerAddressRepository,
@@ -80,6 +83,7 @@ public partial class CustomerService : ICustomerService
         TaxSettings taxSettings)
     {
         _customerSettings = customerSettings;
+        _eventPublisher = eventPublisher;
         _genericAttributeService = genericAttributeService;
         _dataProvider = dataProvider;
         _customerAddressRepository = customerAddressRepository;
@@ -148,6 +152,7 @@ public partial class CustomerService : ICustomerService
     /// <param name="phone">Phone; null to load all customers</param>
     /// <param name="zipPostalCode">Phone; null to load all customers</param>
     /// <param name="ipAddress">IP address; null to load all customers</param>
+    /// <param name="isActive">Customer is active; null to load all customers</param>
     /// <param name="pageIndex">Page index</param>
     /// <param name="pageSize">Page size</param>
     /// <param name="getOnlyTotalCount">A value in indicating whether you want to load only total number of records. Set to "true" if you don't want to load data from database</param>
@@ -161,7 +166,7 @@ public partial class CustomerService : ICustomerService
         string email = null, string username = null, string firstName = null, string lastName = null,
         int dayOfBirth = 0, int monthOfBirth = 0,
         string company = null, string phone = null, string zipPostalCode = null, string ipAddress = null,
-        int pageIndex = 0, int pageSize = int.MaxValue, bool getOnlyTotalCount = false)
+        bool? isActive = null, int pageIndex = 0, int pageSize = int.MaxValue, bool getOnlyTotalCount = false)
     {
         var customers = await _customerRepository.GetAllPagedAsync(query =>
         {
@@ -177,6 +182,8 @@ public partial class CustomerService : ICustomerService
                 query = query.Where(c => affiliateId == c.AffiliateId);
             if (vendorId > 0)
                 query = query.Where(c => vendorId == c.VendorId);
+            if (isActive.HasValue)
+                query = query.Where(c => c.Active == isActive.Value);
 
             query = query.Where(c => !c.Deleted);
 
@@ -656,6 +663,8 @@ public partial class CustomerService : ICustomerService
         //clear selected payment method
         if (clearPaymentMethod)
             await _genericAttributeService.SaveAttributeAsync<string>(customer, NopCustomerDefaults.SelectedPaymentMethodAttribute, null, storeId);
+
+        await _eventPublisher.PublishAsync(new ResetCheckoutDataEvent(customer, storeId));
     }
 
     /// <summary>

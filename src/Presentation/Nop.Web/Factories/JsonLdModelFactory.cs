@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using System.Text.Encodings.Web;
 using Nop.Core;
 using Nop.Core.Domain.Catalog;
 using Nop.Core.Events;
@@ -81,7 +82,7 @@ public partial class JsonLdModelFactory : IJsonLdModelFactory
     {
         var breadcrumbList = await PrepareJsonLdBreadcrumbListAsync(categoryModels);
 
-        await _eventPublisher.PublishAsync(new JsonLdCreatedEvent(breadcrumbList));
+        await _eventPublisher.PublishAsync(new JsonLdCreatedEvent<JsonLdBreadcrumbListModel>(breadcrumbList));
 
         return breadcrumbList;
     }
@@ -107,7 +108,7 @@ public partial class JsonLdModelFactory : IJsonLdModelFactory
             }
         });
 
-        await _eventPublisher.PublishAsync(new JsonLdCreatedEvent(breadcrumbList));
+        await _eventPublisher.PublishAsync(new JsonLdCreatedEvent<JsonLdBreadcrumbListModel>(breadcrumbList));
 
         return breadcrumbList;
     }
@@ -139,7 +140,7 @@ public partial class JsonLdModelFactory : IJsonLdModelFactory
             Offer = new JsonLdOfferModel
             {
                 Url = productUrl.ToLowerInvariant(),
-                Price = model.ProductPrice.CallForPrice ? null : productPrice.ToString("0.00", CultureInfo.InvariantCulture),
+                Price = model.ProductPrice.CallForPrice ? null : productPrice?.ToString("0.00", CultureInfo.InvariantCulture),
                 PriceCurrency = model.ProductPrice.CurrencyCode,
                 PriceValidUntil = model.AvailableEndDate,
                 Availability = @"https://schema.org/" + (model.InStock ? "InStock" : "OutOfStock")
@@ -149,11 +150,8 @@ public partial class JsonLdModelFactory : IJsonLdModelFactory
 
         if (model.ProductReviewOverview.TotalReviews > 0)
         {
-            var ratingPercent = 0;
-            if (model.ProductReviewOverview.TotalReviews != 0)
-            {
-                ratingPercent = ((model.ProductReviewOverview.RatingSum * 100) / model.ProductReviewOverview.TotalReviews) / 5;
-            }
+            var ratingPercent = model.ProductReviewOverview.RatingSum * 100 / model.ProductReviewOverview.TotalReviews / 5;
+
             var ratingValue = ratingPercent / (decimal)20;
 
             product.AggregateRating = new JsonLdAggregateRatingModel
@@ -164,13 +162,13 @@ public partial class JsonLdModelFactory : IJsonLdModelFactory
 
             product.Review = model.ProductReviews.Items?.Select(review => new JsonLdReviewModel
             {
-                Name = review.Title,
-                ReviewBody = review.ReviewText,
+                Name = JavaScriptEncoder.Default.Encode(review.Title),
+                ReviewBody = JavaScriptEncoder.Default.Encode(review.ReviewText),
                 ReviewRating = new JsonLdRatingModel
                 {
                     RatingValue = review.Rating
                 },
-                Author = new JsonLdPersonModel { Name = review.CustomerName },
+                Author = new JsonLdPersonModel { Name = JavaScriptEncoder.Default.Encode(review.CustomerName) },
                 DatePublished = review.WrittenOnStr
             }).ToList();
         }
@@ -181,7 +179,7 @@ public partial class JsonLdModelFactory : IJsonLdModelFactory
             product.HasVariant.Add(await PrepareJsonLdProductAsync(associatedProduct, parentUrl));
         }
 
-        await _eventPublisher.PublishAsync(new JsonLdCreatedEvent(product));
+        await _eventPublisher.PublishAsync(new JsonLdCreatedEvent<JsonLdProductModel>(product));
 
         return product;
     }

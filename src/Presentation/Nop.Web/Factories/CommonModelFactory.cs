@@ -157,6 +157,25 @@ public partial class CommonModelFactory : ICommonModelFactory
 
     #region Utilities
 
+    private async Task DisallowAjaxRoutesAsync(StringBuilder stringBuilder)
+    {
+        var routes = new[] { "/category/products", "/manufacturer/products", "/tag/products", "/product/search", "/vendor/products", "/newproducts/products" };
+        foreach (var route in routes)
+        {
+            stringBuilder.AppendLine($"Disallow: {route}");
+        }
+
+        if (_localizationSettings.SeoFriendlyUrlsForLanguagesEnabled)
+        {
+            var store = await _storeContext.GetCurrentStoreAsync();
+            foreach (var language in await _languageService.GetAllLanguagesAsync(storeId: store.Id))
+            {
+                foreach (var route in routes)
+                    stringBuilder.AppendLine($"Disallow: /{language.UniqueSeoCode}{route}");
+            }
+        }
+    }
+
     /// <summary>
     /// Get the number of unread private messages
     /// </summary>
@@ -344,8 +363,8 @@ public partial class CommonModelFactory : ICommonModelFactory
             RegistrationType = _customerSettings.UserRegistrationType,
             IsAuthenticated = await _customerService.IsRegisteredAsync(customer),
             CustomerName = await _customerService.IsRegisteredAsync(customer) ? await _customerService.FormatUsernameAsync(customer) : string.Empty,
-            ShoppingCartEnabled = await _permissionService.AuthorizeAsync(StandardPermissionProvider.EnableShoppingCart),
-            WishlistEnabled = await _permissionService.AuthorizeAsync(StandardPermissionProvider.EnableWishlist),
+            ShoppingCartEnabled = await _permissionService.AuthorizeAsync(StandardPermission.PublicStore.ENABLE_SHOPPING_CART),
+            WishlistEnabled = await _permissionService.AuthorizeAsync(StandardPermission.PublicStore.ENABLE_WISHLIST),
             AllowPrivateMessages = await _customerService.IsRegisteredAsync(customer) && _forumSettings.AllowPrivateMessages,
             UnreadPrivateMessages = unreadMessage,
             AlertMessage = alertMessage,
@@ -378,7 +397,7 @@ public partial class CommonModelFactory : ICommonModelFactory
         {
             ImpersonatedCustomerName = await _customerService.IsRegisteredAsync(customer) ? await _customerService.FormatUsernameAsync(customer) : string.Empty,
             IsCustomerImpersonated = _workContext.OriginalCustomerIfImpersonated != null,
-            DisplayAdminLink = await _permissionService.AuthorizeAsync(StandardPermissionProvider.AccessAdminPanel),
+            DisplayAdminLink = await _permissionService.AuthorizeAsync(StandardPermission.Security.ACCESS_ADMIN_PANEL),
             EditPageUrl = _nopHtmlHelper.GetEditPageUrl()
         };
 
@@ -434,8 +453,8 @@ public partial class CommonModelFactory : ICommonModelFactory
         var model = new FooterModel
         {
             StoreName = await _localizationService.GetLocalizedAsync(store, x => x.Name),
-            WishlistEnabled = await _permissionService.AuthorizeAsync(StandardPermissionProvider.EnableWishlist),
-            ShoppingCartEnabled = await _permissionService.AuthorizeAsync(StandardPermissionProvider.EnableShoppingCart),
+            WishlistEnabled = await _permissionService.AuthorizeAsync(StandardPermission.PublicStore.ENABLE_WISHLIST),
+            ShoppingCartEnabled = await _permissionService.AuthorizeAsync(StandardPermission.PublicStore.ENABLE_SHOPPING_CART),
             SitemapEnabled = _sitemapSettings.SitemapEnabled,
             SearchEnabled = _catalogSettings.ProductSearchEnabled,
             WorkingLanguageId = (await _workContext.GetWorkingLanguageAsync()).Id,
@@ -636,6 +655,12 @@ public partial class CommonModelFactory : ICommonModelFactory
                 sb.Append(robotsFileContent);
             }
         }
+
+        #region Issue 7286 Version 4.70 (bug fixes)
+
+        await DisallowAjaxRoutesAsync(sb);
+
+        #endregion
 
         return sb.ToString();
     }

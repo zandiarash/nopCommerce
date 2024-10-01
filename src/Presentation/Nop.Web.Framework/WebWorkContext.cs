@@ -6,6 +6,7 @@ using Nop.Core.Domain.Directory;
 using Nop.Core.Domain.Localization;
 using Nop.Core.Domain.Tax;
 using Nop.Core.Domain.Vendors;
+using Nop.Core.Events;
 using Nop.Core.Http;
 using Nop.Core.Security;
 using Nop.Services.Authentication;
@@ -15,7 +16,6 @@ using Nop.Services.Directory;
 using Nop.Services.Helpers;
 using Nop.Services.Localization;
 using Nop.Services.ScheduleTasks;
-using Nop.Services.Stores;
 using Nop.Services.Vendors;
 using Nop.Web.Framework.Globalization;
 
@@ -33,11 +33,11 @@ public partial class WebWorkContext : IWorkContext
     protected readonly IAuthenticationService _authenticationService;
     protected readonly ICurrencyService _currencyService;
     protected readonly ICustomerService _customerService;
+    protected readonly IEventPublisher _eventPublisher;
     protected readonly IGenericAttributeService _genericAttributeService;
     protected readonly IHttpContextAccessor _httpContextAccessor;
     protected readonly ILanguageService _languageService;
     protected readonly IStoreContext _storeContext;
-    protected readonly IStoreMappingService _storeMappingService;
     protected readonly IUserAgentHelper _userAgentHelper;
     protected readonly IVendorService _vendorService;
     protected readonly IWebHelper _webHelper;
@@ -60,11 +60,11 @@ public partial class WebWorkContext : IWorkContext
         IAuthenticationService authenticationService,
         ICurrencyService currencyService,
         ICustomerService customerService,
+        IEventPublisher eventPublisher,
         IGenericAttributeService genericAttributeService,
         IHttpContextAccessor httpContextAccessor,
         ILanguageService languageService,
         IStoreContext storeContext,
-        IStoreMappingService storeMappingService,
         IUserAgentHelper userAgentHelper,
         IVendorService vendorService,
         IWebHelper webHelper,
@@ -76,11 +76,11 @@ public partial class WebWorkContext : IWorkContext
         _authenticationService = authenticationService;
         _currencyService = currencyService;
         _customerService = customerService;
+        _eventPublisher = eventPublisher;
         _genericAttributeService = genericAttributeService;
         _httpContextAccessor = httpContextAccessor;
         _languageService = languageService;
         _storeContext = storeContext;
-        _storeMappingService = storeMappingService;
         _userAgentHelper = userAgentHelper;
         _vendorService = vendorService;
         _webHelper = webHelper;
@@ -108,7 +108,7 @@ public partial class WebWorkContext : IWorkContext
     /// <param name="customerGuid">Guid of the customer</param>
     protected virtual void SetCustomerCookie(Guid customerGuid)
     {
-        if (_httpContextAccessor.HttpContext?.Response?.HasStarted ?? true)
+        if (_httpContextAccessor.HttpContext?.Response.HasStarted ?? true)
             return;
 
         //delete current cookie value
@@ -139,7 +139,7 @@ public partial class WebWorkContext : IWorkContext
     /// <param name="language">Language</param>
     protected virtual void SetLanguageCookie(Language language)
     {
-        if (_httpContextAccessor.HttpContext?.Response?.HasStarted ?? true)
+        if (_httpContextAccessor.HttpContext?.Response.HasStarted ?? true)
             return;
 
         //delete current cookie value
@@ -158,11 +158,12 @@ public partial class WebWorkContext : IWorkContext
     /// <summary>
     /// Get language from the request
     /// </summary>
+    /// <param name="storeId">Get a language that is only allowed for the specified store; pass 0 to ignore limitations</param>
     /// <returns>
     /// A task that represents the asynchronous operation
     /// The task result contains the found language
     /// </returns>
-    protected virtual async Task<Language> GetLanguageFromRequestAsync()
+    protected virtual async Task<Language> GetLanguageFromRequestAsync(int storeId = 0)
     {
         var requestCultureFeature = _httpContextAccessor.HttpContext?.Features.Get<IRequestCultureFeature>();
         if (requestCultureFeature is null)
@@ -177,12 +178,9 @@ public partial class WebWorkContext : IWorkContext
             return null;
 
         //try to get language by culture name
-        var requestLanguage = (await _languageService.GetAllLanguagesAsync()).FirstOrDefault(language =>
+        var store = await _storeContext.GetCurrentStoreAsync();
+        var requestLanguage = (await _languageService.GetAllLanguagesAsync(storeId: storeId)).FirstOrDefault(language =>
             language.LanguageCulture.Equals(requestCultureFeature.RequestCulture.Culture.Name, StringComparison.InvariantCultureIgnoreCase));
-
-        //check language availability
-        if (requestLanguage == null || !requestLanguage.Published || !await _storeMappingService.AuthorizeAsync(requestLanguage))
-            return null;
 
         return requestLanguage;
     }
@@ -330,6 +328,9 @@ public partial class WebWorkContext : IWorkContext
         {
             customer.LanguageId = language?.Id;
             await _customerService.UpdateCustomerAsync(customer);
+
+            //raise event
+            await _eventPublisher.PublishAsync(new CustomerChangeWorkingLanguageEvent(customer));
         }
 
         //set cookie
@@ -353,7 +354,7 @@ public partial class WebWorkContext : IWorkContext
         var store = await _storeContext.GetCurrentStoreAsync();
 
         //whether we should detect the language from the request
-        var detectedLanguage = await GetLanguageFromRequestAsync();
+        var detectedLanguage = await GetLanguageFromRequestAsync(store.Id);
 
         //get current saved language identifier
         var currentLanguageId = customer.LanguageId;

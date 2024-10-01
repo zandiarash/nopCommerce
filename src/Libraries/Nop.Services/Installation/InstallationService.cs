@@ -2264,6 +2264,13 @@ namespace Nop.Services.Installation
                     EmailAccountId = eaGeneral.Id
                 },
                 new() {
+                    Name = MessageTemplateSystemNames.ORDER_CANCELLED_VENDOR_NOTIFICATION,
+                    Subject = "%Store.Name%. Order #%Order.OrderNumber% cancelled",
+                     Body = $"<p>{Environment.NewLine}<a href=\"%Store.URL%\">%Store.Name%</a>{Environment.NewLine}<br />{Environment.NewLine}<br />{Environment.NewLine}Order #%Order.OrderNumber% has been cancelled.{Environment.NewLine}<br />{Environment.NewLine}Customer: %Order.CustomerFullName%,{Environment.NewLine}<br />{Environment.NewLine}<br />{Environment.NewLine}<br />{Environment.NewLine}Order Number: %Order.OrderNumber%{Environment.NewLine}<br />{Environment.NewLine}Date Ordered: %Order.CreatedOn%{Environment.NewLine}<br />{Environment.NewLine}<br />{Environment.NewLine}%Order.Product(s)%{Environment.NewLine}</p>{Environment.NewLine}",
+                    IsActive = true,
+                    EmailAccountId = eaGeneral.Id
+                },
+                new() {
                     Name = MessageTemplateSystemNames.ORDER_PROCESSING_CUSTOMER_NOTIFICATION,
                     Subject = "%Store.Name%. Your order is processing",
                     Body = $"<p>{Environment.NewLine}<a href=\"%Store.URL%\">%Store.Name%</a>{Environment.NewLine}<br />{Environment.NewLine}<br />{Environment.NewLine}Hello %Order.CustomerFullName%,{Environment.NewLine}<br />{Environment.NewLine}Your order is processing. Below is the summary of the order.{Environment.NewLine}<br />{Environment.NewLine}<br />{Environment.NewLine}Order Number: %Order.OrderNumber%{Environment.NewLine}<br />{Environment.NewLine}Order Details: <a target=\"_blank\" href=\"%Order.OrderURLForCustomer%\">%Order.OrderURLForCustomer%</a>{Environment.NewLine}<br />{Environment.NewLine}Date Ordered: %Order.CreatedOn%{Environment.NewLine}<br />{Environment.NewLine}<br />{Environment.NewLine}<br />{Environment.NewLine}<br />{Environment.NewLine}Billing Address{Environment.NewLine}<br />{Environment.NewLine}%Order.BillingFirstName% %Order.BillingLastName%{Environment.NewLine}<br />{Environment.NewLine}%Order.BillingAddress1%{Environment.NewLine}<br />{Environment.NewLine}%Order.BillingAddress2%{Environment.NewLine}<br />{Environment.NewLine}%Order.BillingCity% %Order.BillingZipPostalCode%{Environment.NewLine}<br />{Environment.NewLine}%Order.BillingStateProvince% %Order.BillingCountry%{Environment.NewLine}<br />{Environment.NewLine}<br />{Environment.NewLine}<br />{Environment.NewLine}<br />{Environment.NewLine}%if (%Order.Shippable%) Shipping Address{Environment.NewLine}<br />{Environment.NewLine}%Order.ShippingFirstName% %Order.ShippingLastName%{Environment.NewLine}<br />{Environment.NewLine}%Order.ShippingAddress1%{Environment.NewLine}<br />{Environment.NewLine}%Order.ShippingAddress2%{Environment.NewLine}<br />{Environment.NewLine}%Order.ShippingCity% %Order.ShippingZipPostalCode%{Environment.NewLine}<br />{Environment.NewLine}%Order.ShippingStateProvince% %Order.ShippingCountry%{Environment.NewLine}<br />{Environment.NewLine}<br />{Environment.NewLine}Shipping Method: %Order.ShippingMethod%{Environment.NewLine}<br />{Environment.NewLine}<br />{Environment.NewLine} endif% %Order.Product(s)%{Environment.NewLine}</p>{Environment.NewLine}",
@@ -2702,7 +2709,7 @@ namespace Nop.Services.Installation
                 UseResponseCompression = true,
                 FaviconAndAppIconsHeadCode =
                     "<link rel=\"apple-touch-icon\" sizes=\"180x180\" href=\"/icons/icons_0/apple-touch-icon.png\"><link rel=\"icon\" type=\"image/png\" sizes=\"32x32\" href=\"/icons/icons_0/favicon-32x32.png\"><link rel=\"icon\" type=\"image/png\" sizes=\"192x192\" href=\"/icons/icons_0/android-chrome-192x192.png\"><link rel=\"icon\" type=\"image/png\" sizes=\"16x16\" href=\"/icons/icons_0/favicon-16x16.png\"><link rel=\"manifest\" href=\"/icons/icons_0/site.webmanifest\"><link rel=\"mask-icon\" href=\"/icons/icons_0/safari-pinned-tab.svg\" color=\"#5bbad5\"><link rel=\"shortcut icon\" href=\"/icons/icons_0/favicon.ico\"><meta name=\"msapplication-TileColor\" content=\"#2d89ef\"><meta name=\"msapplication-TileImage\" content=\"/icons/icons_0/mstile-144x144.png\"><meta name=\"msapplication-config\" content=\"/icons/icons_0/browserconfig.xml\"><meta name=\"theme-color\" content=\"#ffffff\">",
-                EnableHtmlMinification = true,
+                EnableHtmlMinification = false,
                 RestartTimeout = NopCommonDefaults.RestartTimeout,
                 HeaderCustomHtml = string.Empty,
                 FooterCustomHtml = string.Empty
@@ -2865,7 +2872,8 @@ namespace Nop.Services.Installation
                 AllowCustomersToSearchWithManufacturerName = false,
                 DisplayAllPicturesOnCatalogPages = false,
                 ProductUrlStructureTypeId = (int)ProductUrlStructureType.Product,
-                ActiveSearchProviderSystemName = string.Empty
+                ActiveSearchProviderSystemName = string.Empty,
+                UseStandardSearchWhenSearchProviderThrowsException = true
             });
 
             await settingService.SaveSettingAsync(new LocalizationSettings
@@ -5715,6 +5723,99 @@ namespace Nop.Services.Installation
             await AddProductTagAsync(productNokiaLumia, "cool");
             await AddProductTagAsync(productNokiaLumia, "camera");
 
+            var productIphone = new Product
+            {
+                ProductType = ProductType.SimpleProduct,
+                VisibleIndividually = true,
+                Name = "Apple iPhone 16 128GB",
+                Sku = "A_16_128T",
+                ShortDescription = "Apple iPhone 16 128GB Teal with 6.1 inches screen and 48 megapixels rear-facing camera",
+                FullDescription = "<p>iPhone 16 brings you Dynamic Island, a 48MP Main camera and USB-C — all in a durable colour-infused glass and aluminium design. iPhone 16 has the Dynamic Island, an innovative way to interact with important alerts and Live Activities.</p>",
+                ProductTemplateId = productTemplateSimple.Id,
+                AllowCustomerReviews = true,
+                Price = 799M,
+                IsShipEnabled = true,
+                Weight = 7,
+                Length = 7,
+                Width = 7,
+                Height = 7,
+                TaxCategoryId = _taxCategoryRepository.Table.Single(tc => tc.Name == "Electronics & Software").Id,
+                ManageInventoryMethod = ManageInventoryMethod.ManageStock,
+                StockQuantity = 10000,
+                NotifyAdminForQuantityBelow = 1,
+                AllowBackInStockSubscriptions = false,
+                DisplayStockAvailability = true,
+                LowStockActivity = LowStockActivity.DisableBuyButton,
+                BackorderMode = BackorderMode.NoBackorders,
+                OrderMinimumQuantity = 1,
+                OrderMaximumQuantity = 10000,
+                Published = true,
+                MarkAsNew = true,
+                CreatedOnUtc = DateTime.UtcNow,
+                UpdatedOnUtc = DateTime.UtcNow
+            };
+            allProducts.Add(productIphone);
+
+            await InsertInstallationDataAsync(productIphone);
+
+            await InsertInstallationDataAsync(new ProductCategory
+            {
+                ProductId = productIphone.Id,
+                CategoryId = _categoryRepository.Table.Single(c => c.Name == "Cell phones").Id,
+                DisplayOrder = 1
+            });
+
+            await InsertProductPictureAsync(productIphone, "product_iphone_16_128.png");
+            await AddProductTagAsync(productIphone, "cool");
+            await AddProductTagAsync(productIphone, "cell");
+
+            var productSamsungGalaxy = new Product
+            {
+                ProductType = ProductType.SimpleProduct,
+                VisibleIndividually = true,
+                Name = "Samsung Galaxy S24 256GB",
+                Sku = "SG_24_256B",
+                ShortDescription = "Samsung - Galaxy S24 256GB - Onyx Black with Dynamic LTPO AMOLED 2X, 120Hz, HDR10+",
+                FullDescription = "<p>The Samsung Galaxy S24 combines a fast processor, a bright display, sharp cameras, and helpful AI tools in a pocket-friendly size for a reasonable price. In addition to a top-end Qualcomm processor and excellent cameras, the Galaxy S24 gets all of Samsung’s cutting-edge AI features.</p>",
+                ProductTemplateId = productTemplateSimple.Id,
+                AllowCustomerReviews = true,
+                Price = 859M,
+                IsShipEnabled = true,
+                Weight = 7,
+                Length = 7,
+                Width = 7,
+                Height = 7,
+                TaxCategoryId = _taxCategoryRepository.Table.Single(tc => tc.Name == "Electronics & Software").Id,
+                ManageInventoryMethod = ManageInventoryMethod.ManageStock,
+                StockQuantity = 10000,
+                NotifyAdminForQuantityBelow = 1,
+                AllowBackInStockSubscriptions = false,
+                DisplayStockAvailability = true,
+                LowStockActivity = LowStockActivity.DisableBuyButton,
+                BackorderMode = BackorderMode.NoBackorders,
+                OrderMinimumQuantity = 1,
+                OrderMaximumQuantity = 10000,
+                Published = true,
+                MarkAsNew = true,
+                CreatedOnUtc = DateTime.UtcNow,
+                UpdatedOnUtc = DateTime.UtcNow
+            };
+            allProducts.Add(productSamsungGalaxy);
+
+            await InsertInstallationDataAsync(productSamsungGalaxy);
+
+            await InsertInstallationDataAsync(new ProductCategory
+            {
+                ProductId = productSamsungGalaxy.Id,
+                CategoryId = _categoryRepository.Table.Single(c => c.Name == "Cell phones").Id,
+                DisplayOrder = 1
+            });
+
+            await InsertProductPictureAsync(productSamsungGalaxy, "product_samsung_galaxy_s24.png");
+            await AddProductTagAsync(productSamsungGalaxy, "awesome");
+            await AddProductTagAsync(productSamsungGalaxy, "cell");
+
+
             var productBeatsPill = new Product
             {
                 ProductType = ProductType.SimpleProduct,
@@ -5746,8 +5847,7 @@ namespace Nop.Services.Installation
                 Published = true,
                 MarkAsNew = true,
                 CreatedOnUtc = DateTime.UtcNow,
-                UpdatedOnUtc = DateTime.UtcNow,
-                HasTierPrices = true
+                UpdatedOnUtc = DateTime.UtcNow
             };
             allProducts.Add(productBeatsPill);
 
@@ -6519,8 +6619,7 @@ namespace Nop.Services.Installation
                 OrderMaximumQuantity = 10000,
                 Published = true,
                 CreatedOnUtc = DateTime.UtcNow,
-                UpdatedOnUtc = DateTime.UtcNow,
-                HasTierPrices = true
+                UpdatedOnUtc = DateTime.UtcNow
             };
 
             allProducts.Add(productOversizedWomenTShirt);
@@ -6647,8 +6746,7 @@ namespace Nop.Services.Installation
                 OrderMaximumQuantity = 10000,
                 Published = true,
                 CreatedOnUtc = DateTime.UtcNow,
-                UpdatedOnUtc = DateTime.UtcNow,
-                HasTierPrices = true
+                UpdatedOnUtc = DateTime.UtcNow
             };
             allProducts.Add(productLeviJeans);
 

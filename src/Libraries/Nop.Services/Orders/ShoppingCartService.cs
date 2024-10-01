@@ -851,6 +851,8 @@ public partial class ShoppingCartService : IShoppingCartService
 
         foreach (var a2 in attributes2)
         {
+            var productAttributeValues = await _productAttributeService.GetProductAttributeValuesAsync(a2.Id);
+
             if (a2.IsRequired)
             {
                 var found = false;
@@ -861,6 +863,9 @@ public partial class ShoppingCartService : IShoppingCartService
                         continue;
 
                     var attributeValuesStr = _productAttributeParser.ParseValues(attributesXml, a1.Id);
+
+                    if (a2.ShouldHaveValues() && productAttributeValues.Any() && !productAttributeValues.Any(x => attributeValuesStr.Contains(x.Id.ToString())))
+                        break;
 
                     foreach (var str1 in attributeValuesStr)
                     {
@@ -890,7 +895,7 @@ public partial class ShoppingCartService : IShoppingCartService
                 continue;
 
             //customers cannot edit read-only attributes
-            var allowedReadOnlyValueIds = (await _productAttributeService.GetProductAttributeValuesAsync(a2.Id))
+            var allowedReadOnlyValueIds = productAttributeValues
                 .Where(x => x.IsPreSelected)
                 .Select(x => x.Id)
                 .ToArray();
@@ -961,11 +966,15 @@ public partial class ShoppingCartService : IShoppingCartService
 
             var productAttributeMapping = await _productAttributeService.GetProductAttributeMappingByIdAsync(attributeValue.ProductAttributeMappingId);
 
-            if (ignoreNonCombinableAttributes && productAttributeMapping != null && productAttributeMapping.IsNonCombinable())
+            if (productAttributeMapping == null)
+                continue;
+
+            if (ignoreNonCombinableAttributes && productAttributeMapping.IsNonCombinable())
                 continue;
 
             //associated product (bundle)
             var associatedProduct = await _productService.GetProductByIdAsync(attributeValue.AssociatedProductId);
+            
             if (associatedProduct != null)
             {
                 var store = await _storeContext.GetCurrentStoreAsync();
@@ -986,9 +995,7 @@ public partial class ShoppingCartService : IShoppingCartService
                 }
             }
             else
-            {
                 warnings.Add($"Associated product cannot be loaded - {attributeValue.AssociatedProductId}");
-            }
         }
 
         return warnings;
@@ -1554,13 +1561,13 @@ public partial class ShoppingCartService : IShoppingCartService
         ArgumentNullException.ThrowIfNull(product);
 
         var warnings = new List<string>();
-        if (shoppingCartType == ShoppingCartType.ShoppingCart && !await _permissionService.AuthorizeAsync(StandardPermissionProvider.EnableShoppingCart, customer))
+        if (shoppingCartType == ShoppingCartType.ShoppingCart && !await _permissionService.AuthorizeAsync(StandardPermission.PublicStore.ENABLE_SHOPPING_CART, customer))
         {
             warnings.Add("Shopping cart is disabled");
             return warnings;
         }
 
-        if (shoppingCartType == ShoppingCartType.Wishlist && !await _permissionService.AuthorizeAsync(StandardPermissionProvider.EnableWishlist, customer))
+        if (shoppingCartType == ShoppingCartType.Wishlist && !await _permissionService.AuthorizeAsync(StandardPermission.PublicStore.ENABLE_WISHLIST, customer))
         {
             warnings.Add("Wishlist is disabled");
             return warnings;
@@ -1681,6 +1688,9 @@ public partial class ShoppingCartService : IShoppingCartService
 
         async Task addRequiredProductsToCartAsync(int qty = 0)
         {
+            if (!product.RequireOtherProducts)
+                return;
+
             //get these required products
             var requiredProducts = await _productService.GetProductsByIdsAsync(_productService.ParseRequiredProductIds(product));
             if (!requiredProducts.Any())

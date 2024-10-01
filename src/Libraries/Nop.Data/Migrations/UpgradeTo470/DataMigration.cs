@@ -1,10 +1,10 @@
 ﻿using FluentMigrator;
 using LinqToDB;
 using Nop.Core.Domain.Catalog;
+using Nop.Core.Domain.Localization;
 using Nop.Core.Domain.Logging;
 using Nop.Core.Domain.Media;
 using Nop.Core.Domain.Messages;
-using Nop.Core.Domain.ScheduleTasks;
 using Nop.Core.Domain.Security;
 using Nop.Data.Mapping;
 
@@ -186,7 +186,17 @@ public class DataMigration : Migration
             Delete.Column(credentialsColumnName).FromTable(emailAccountTableName);
         }
 
-
+        //#6978
+        var newsLetterSubscriptionTableName = nameof(NewsLetterSubscription);
+        var languageIdColumnName = nameof(NewsLetterSubscription.LanguageId);
+        if (Schema.Table(newsLetterSubscriptionTableName).Column(languageIdColumnName).Exists())
+        {
+            var defaultLanguageId = _dataProvider.GetTable<Language>().FirstOrDefault()?.Id ?? 0;
+            
+            _dataProvider.GetTable<NewsLetterSubscription>()
+                .Set(p=>p.LanguageId, defaultLanguageId)
+                .Update();
+        }
     }
 
     public override void Down()

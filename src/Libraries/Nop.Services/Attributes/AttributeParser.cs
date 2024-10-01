@@ -494,12 +494,9 @@ public partial class AttributeParser<TAttribute, TAttributeValue> : IAttributePa
     public async Task<bool?> IsConditionMetAsync(string conditionAttributeXml, string selectedAttributesXml)
     {
         if (string.IsNullOrEmpty(conditionAttributeXml))
-            return null;
-
-        if (string.IsNullOrEmpty(conditionAttributeXml))
             //no condition
             return null;
-
+        
         //load an attribute this one depends on
         var dependOnAttribute = (await ParseAttributesAsync(conditionAttributeXml)).FirstOrDefault();
         if (dependOnAttribute == null)

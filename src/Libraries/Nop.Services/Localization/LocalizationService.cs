@@ -203,6 +203,15 @@ public partial class LocalizationService : ILocalizationService
     }
 
     /// <summary>
+    /// Deletes a locale string resource
+    /// </summary>
+    /// <param name="localeStringResource">Locale string resource</param>
+    public virtual void DeleteLocaleStringResource(LocaleStringResource localeStringResource)
+    {
+        _lsrRepository.Delete(localeStringResource);
+    }
+
+    /// <summary>
     /// Gets a locale string resource
     /// </summary>
     /// <param name="localeStringResourceId">Locale string resource identifier</param>
@@ -669,7 +678,7 @@ public partial class LocalizationService : ILocalizationService
 
         //set default value if required
         if (string.IsNullOrEmpty(result))
-            result = CommonHelper.ConvertEnum(enumValue.ToString());
+            result = CommonHelper.SplitCamelCaseWord(enumValue.ToString());
 
         return result;
     }
