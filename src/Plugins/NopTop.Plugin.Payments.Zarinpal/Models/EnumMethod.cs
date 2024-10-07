@@ -1,9 +1,6 @@
-namespace NopTop.Plugin.Payments.Zarinpal.Models
+namespace NopTop.Plugin.Payments.Zarinpal.Models;
+public enum EnumMethod
 {
-
-    public enum EnumMethod
-    {
-        SOAP = 0,
-        REST = 1,
-    }
+    SOAP = 0,
+    REST = 1,
 }

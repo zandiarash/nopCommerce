@@ -1,14 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Nop.Web.Framework.Components;
 
-namespace NopTop.Plugin.Payments.Zarinpal.Components
+namespace NopTop.Plugin.Payments.Zarinpal.Components;
+[ViewComponent(Name = "PaymentZarinpal")]
+public class PaymentZarinpalViewComponent : NopViewComponent
 {
-    [ViewComponent(Name = "PaymentZarinpal")]
-    public class PaymentZarinpalViewComponent : NopViewComponent
+    public IViewComponentResult Invoke()
     {
-        public IViewComponentResult Invoke()
-        {
-            return View("~/Plugins/NopTop.Payments.Zarinpal/Views/PaymentInfo.cshtml");
-        }
+        return View("~/Plugins/NopTop.Payments.Zarinpal/Views/PaymentInfo.cshtml");
     }
 }

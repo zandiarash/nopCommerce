@@ -1,14 +1,12 @@
 ﻿
-namespace NopTop.Plugin.Payments.Zarinpal.Models
+namespace NopTop.Plugin.Payments.Zarinpal.Models;
+public class StatusToResult
 {
-    public class StatusToResult
+    public StatusToResult()
     {
-        public StatusToResult()
-        {
-            Message = string.Empty;
-            IsOk = false;
-        }
-        public string Message { get; set; }
-        public bool IsOk { get; set; }
+        Message = "Unknown Error";
+        IsOk = false;
     }
+    public string Message { get; set; }
+    public bool IsOk { get; set; }
 }
