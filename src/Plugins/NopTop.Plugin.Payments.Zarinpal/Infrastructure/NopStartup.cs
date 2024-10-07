@@ -2,8 +2,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Nop.Core.Infrastructure;
-//using NopTop.Plugin.Payments.Zarinpal.Services;
-using Nop.Web.Framework.Infrastructure.Extensions;
 
 namespace NopTop.Plugin.Payments.Zarinpal.Infrastructure
 {

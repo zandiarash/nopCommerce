@@ -2,15 +2,12 @@
 using Microsoft.AspNetCore.Routing;
 using Nop.Core;
 using Nop.Core.Domain.Customers;
-using Nop.Core.Domain.Directory;
 using Nop.Core.Domain.Orders;
 using Nop.Core.Domain.Payments;
 using Nop.Services.Common;
 using Nop.Services.Configuration;
 using Nop.Services.Customers;
-using Nop.Services.Directory;
 using Nop.Services.Localization;
-using Nop.Services.Orders;
 using Nop.Services.Payments;
 using Nop.Services.Plugins;
 using Nop.Services.Stores;
@@ -39,14 +36,8 @@ public class ZarinPalPaymentProcessor : BasePlugin, IPaymentMethod, IAdminMenuPl
     #region Fields
     private readonly CustomerSettings _customerSettings;
     private readonly IHttpContextAccessor _httpContextAccessor;
-    private readonly IPaymentService _paymentService;
-    private readonly CurrencySettings _currencySettings;
-    private readonly ICurrencyService _currencyService;
-    private readonly IGenericAttributeService _genericAttributeService;
     private readonly ILocalizationService _localizationService;
-    private readonly IOrderTotalCalculationService _orderTotalCalculationService;
     private readonly ISettingService _settingService;
-    private readonly ITaxService _taxService;
     private readonly IWebHelper _webHelper;
     private readonly ZarinpalPaymentSettings _zarinPalPaymentSettings;
     private readonly ILanguageService _languageService;
@@ -61,13 +52,9 @@ public class ZarinPalPaymentProcessor : BasePlugin, IPaymentMethod, IAdminMenuPl
 
     #region Ctor
 
-    public ZarinPalPaymentProcessor(CurrencySettings currencySettings,
+    public ZarinPalPaymentProcessor(
         IHttpContextAccessor httpContextAccessor,
-        IPaymentService paymentService,
-        ICurrencyService currencyService,
-        IGenericAttributeService genericAttributeService,
         ILocalizationService localizationService,
-        IOrderTotalCalculationService orderTotalCalculationService,
         ISettingService settingService,
         ITaxService taxService,
         IWebHelper webHelper,
@@ -81,18 +68,12 @@ public class ZarinPalPaymentProcessor : BasePlugin, IPaymentMethod, IAdminMenuPl
         IAddressService addressService
         )
     {
-        _paymentService = paymentService;
         _httpContextAccessor = httpContextAccessor;
         _workContext = workContext;
         _customerService = customerService;
         _storeService = storeService;
-        _currencySettings = currencySettings;
-        _currencyService = currencyService;
-        _genericAttributeService = genericAttributeService;
         _localizationService = localizationService;
-        _orderTotalCalculationService = orderTotalCalculationService;
         _settingService = settingService;
-        _taxService = taxService;
         _webHelper = webHelper;
         _zarinPalPaymentSettings = zarinPalPaymentSettings;
         _storeContext = storeContext;

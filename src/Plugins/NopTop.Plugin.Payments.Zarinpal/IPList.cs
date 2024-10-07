@@ -14,42 +14,42 @@ namespace NopTop.Plugin.Payments.Zarinpal;
 /// </summary>
 internal class IPArrayList
 {
-    private bool isSorted = false;
-    private ArrayList ipNumList = new ArrayList();
-    private uint ipmask;
+    private bool _isSorted = false;
+    private ArrayList _ipNumList = new ArrayList();
+    private uint _ipmask;
 
     /// <summary>
     /// Constructor that sets the mask for the list
     /// </summary>
     public IPArrayList(uint mask)
     {
-        ipmask = mask;
+        _ipmask = mask;
     }
 
     /// <summary>
     /// Add a new IP numer (range) to the list
     /// </summary>
-    public void Add(uint IPNum)
+    public void Add(uint iPNum)
     {
-        isSorted = false;
-        ipNumList.Add(IPNum & ipmask);
+        _isSorted = false;
+        _ipNumList.Add(iPNum & _ipmask);
     }
 
     /// <summary>
     /// Checks if an IP number is within the ranges included by the list
     /// </summary>
-    public bool Check(uint IPNum)
+    public bool Check(uint iPNum)
     {
         bool found = false;
-        if (ipNumList.Count > 0)
+        if (_ipNumList.Count > 0)
         {
-            if (!isSorted)
+            if (!_isSorted)
             {
-                ipNumList.Sort();
-                isSorted = true;
+                _ipNumList.Sort();
+                _isSorted = true;
             }
-            IPNum = IPNum & ipmask;
-            if (ipNumList.BinarySearch(IPNum) >= 0)
+            iPNum = iPNum & _ipmask;
+            if (_ipNumList.BinarySearch(iPNum) >= 0)
                 found = true;
         }
         return found;
@@ -60,8 +60,8 @@ internal class IPArrayList
     /// </summary>
     public void Clear()
     {
-        ipNumList.Clear();
-        isSorted = false;
+        _ipNumList.Clear();
+        _isSorted = false;
     }
 
     /// <summary>
@@ -70,7 +70,7 @@ internal class IPArrayList
     public override string ToString()
     {
         StringBuilder buf = new StringBuilder();
-        foreach (uint ipnum in ipNumList)
+        foreach (uint ipnum in _ipNumList)
         {
             if (buf.Length > 0)
                 buf.Append("\r\n");
@@ -89,7 +89,7 @@ internal class IPArrayList
     {
         get
         {
-            return ipmask;
+            return _ipmask;
         }
     }
 }
@@ -99,9 +99,9 @@ internal class IPArrayList
 /// </summary>
 public class IPList
 {
-    private ArrayList ipRangeList = new ArrayList();
-    private SortedList maskList = new SortedList();
-    private ArrayList usedList = new ArrayList();
+    private ArrayList _ipRangeList = new ArrayList();
+    private SortedList _maskList = new SortedList();
+    private ArrayList _usedList = new ArrayList();
 
     public IPList()
     {
@@ -110,18 +110,18 @@ public class IPList
         for (int level = 1; level < 33; level++)
         {
             mask = (mask >> 1) | 0x80000000;
-            maskList.Add(mask, level);
-            ipRangeList.Add(new IPArrayList(mask));
+            _maskList.Add(mask, level);
+            _ipRangeList.Add(new IPArrayList(mask));
         }
     }
 
     // Parse a String IP address to a 32 bit unsigned integer
     // We can't use System.Net.IPAddress as it will not parse
     // our masks correctly eg. 255.255.0.0 is pased as 65535 !
-    private uint parseIP(string IPNumber)
+    private uint parseIP(string iPNumber)
     {
         uint res = 0;
-        string[] elements = IPNumber.Split(new Char[] { '.' });
+        string[] elements = iPNumber.Split(new Char[] { '.' });
         if (elements.Length == 4)
         {
             res = (uint)Convert.ToInt32(elements[0]) << 24;
@@ -145,11 +145,11 @@ public class IPList
     /// </summary>
     public void Add(uint ip)
     {
-        ((IPArrayList)ipRangeList[31]).Add(ip);
-        if (!usedList.Contains((int)31))
+        ((IPArrayList)_ipRangeList[31]).Add(ip);
+        if (!_usedList.Contains((int)31))
         {
-            usedList.Add((int)31);
-            usedList.Sort();
+            _usedList.Add((int)31);
+            _usedList.Sort();
         }
     }
 
@@ -168,15 +168,15 @@ public class IPList
     /// </summary>
     public void Add(uint ip, uint umask)
     {
-        object Level = maskList[umask];
-        if (Level != null)
+        object level = _maskList[umask];
+        if (level != null)
         {
             ip = ip & umask;
-            ((IPArrayList)ipRangeList[(int)Level - 1]).Add(ip);
-            if (!usedList.Contains((int)Level - 1))
+            ((IPArrayList)_ipRangeList[(int)level - 1]).Add(ip);
+            if (!_usedList.Contains((int)level - 1))
             {
-                usedList.Add((int)Level - 1);
-                usedList.Sort();
+                _usedList.Add((int)level - 1);
+                _usedList.Sort();
             }
         }
     }
@@ -187,7 +187,7 @@ public class IPList
     /// </summary>
     public void Add(string ipNumber, int maskLevel)
     {
-        this.Add(parseIP(ipNumber), (uint)maskList.GetKey(maskList.IndexOfValue(maskLevel)));
+        this.Add(parseIP(ipNumber), (uint)_maskList.GetKey(_maskList.IndexOfValue(maskLevel)));
     }
 
     /// <summary>
@@ -214,7 +214,7 @@ public class IPList
         }
         if (fromIP == toIP)
         {
-            this.Add(fromIP);
+            Add(fromIP);
         }
         else
         {
@@ -231,34 +231,34 @@ public class IPList
                 range = range >> 1;
                 diffLevel++;
             }
-            uint mask = (uint)maskList.GetKey(maskList.IndexOfValue(diffLevel));
+            uint mask = (uint)_maskList.GetKey(_maskList.IndexOfValue(diffLevel));
             uint minIP = fromIP & mask;
             if (minIP < fromIP)
                 minIP += range;
             if (minIP > fromIP)
             {
-                this.AddRange(fromIP, minIP - 1);
+                AddRange(fromIP, minIP - 1);
                 fromIP = minIP;
             }
             if (fromIP == toIP)
             {
-                this.Add(fromIP);
+                Add(fromIP);
             }
             else
             {
                 if ((minIP + (range - 1)) <= toIP)
                 {
-                    this.Add(minIP, mask);
+                    Add(minIP, mask);
                     fromIP = minIP + range;
                 }
                 if (fromIP == toIP)
                 {
-                    this.Add(toIP);
+                    Add(toIP);
                 }
                 else
                 {
                     if (fromIP < toIP)
-                        this.AddRange(fromIP, toIP);
+                        AddRange(fromIP, toIP);
                 }
             }
         }
@@ -280,9 +280,9 @@ public class IPList
     {
         bool found = false;
         int i = 0;
-        while (!found && i < usedList.Count)
+        while (!found && i < _usedList.Count)
         {
-            found = ((IPArrayList)ipRangeList[(int)usedList[i]]).Check(ip);
+            found = ((IPArrayList)_ipRangeList[(int)_usedList[i]]).Check(ip);
             i++;
         }
         return found;
@@ -293,11 +293,11 @@ public class IPList
     /// </summary>
     public void Clear()
     {
-        foreach (int i in usedList)
+        foreach (int i in _usedList)
         {
-            ((IPArrayList)ipRangeList[i]).Clear();
+            ((IPArrayList)_ipRangeList[i]).Clear();
         }
-        usedList.Clear();
+        _usedList.Clear();
     }
 
     /// <summary>
@@ -306,10 +306,10 @@ public class IPList
     public override string ToString()
     {
         StringBuilder buffer = new StringBuilder();
-        foreach (int i in usedList)
+        foreach (int i in _usedList)
         {
             buffer.Append("\r\nRange with mask of ").Append(i + 1).Append("\r\n");
-            buffer.Append(((IPArrayList)ipRangeList[i]).ToString());
+            buffer.Append(((IPArrayList)_ipRangeList[i]).ToString());
         }
         return buffer.ToString();
     }
