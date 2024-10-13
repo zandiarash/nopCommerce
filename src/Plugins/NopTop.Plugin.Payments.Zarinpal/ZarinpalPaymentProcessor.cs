@@ -109,7 +109,7 @@ public class ZarinPalPaymentProcessor : BasePlugin, IPaymentMethod, IAdminMenuPl
         if (_zarinPalPaymentSettings.RialToToman)
             total = total / 10;
 
-        string phoneOfUser = string.Empty;
+        var phoneOfUser = string.Empty;
         var billingAddress = await _addressService.GetAddressByIdAsync(order.BillingAddressId);
         var shippingAddress = await _addressService.GetAddressByIdAsync(order.ShippingAddressId ?? 0);
 
@@ -120,11 +120,11 @@ public class ZarinPalPaymentProcessor : BasePlugin, IPaymentMethod, IAdminMenuPl
         if (string.IsNullOrEmpty(phoneOfUser))//Phone number of the ShippingAddress
             phoneOfUser = string.IsNullOrEmpty(shippingAddress?.PhoneNumber) ? phoneOfUser : $"{phoneOfUser} - {shippingAddress.PhoneNumber}";
 
-        string nameFamily = $"{customer.FirstName ?? ""} {customer.LastName ?? ""}".Trim();
-        string zarinGate = _zarinPalPaymentSettings.UseZarinGate ? _zarinPalPaymentSettings.ZarinGateType.ToString() : null;
-        string description = $"{store.Name}{(string.IsNullOrEmpty(nameFamily) ? "" : $" - {nameFamily}")} - {customer.Email}{(string.IsNullOrEmpty(phoneOfUser) ? "" : $" - {phoneOfUser}")}";
-        string callbackURL = string.Concat(_webHelper.GetStoreLocation(), "Plugins/PaymentZarinpal/ResultHandler", "?OGUId=" + postProcessPaymentRequest.Order.OrderGuid);
-        string storeAddress = _webHelper.GetStoreLocation();
+        var nameFamily = $"{customer.FirstName ?? ""} {customer.LastName ?? ""}".Trim();
+        var zarinGate = _zarinPalPaymentSettings.UseZarinGate ? _zarinPalPaymentSettings.ZarinGateType.ToString() : null;
+        var description = $"{store.Name}{(string.IsNullOrEmpty(nameFamily) ? "" : $" - {nameFamily}")} - {customer.Email}{(string.IsNullOrEmpty(phoneOfUser) ? "" : $" - {phoneOfUser}")}";
+        var callbackURL = string.Concat(_webHelper.GetStoreLocation(), "Plugins/PaymentZarinpal/ResultHandler", "?OGUId=" + postProcessPaymentRequest.Order.OrderGuid);
+        var storeAddress = _webHelper.GetStoreLocation();
 
 
         var url = $"https://{(_zarinPalPaymentSettings.UseSandbox ? "sandbox" : "payment")}.zarinpal.com/pg/v4/payment/request.json";
@@ -161,10 +161,9 @@ public class ZarinPalPaymentProcessor : BasePlugin, IPaymentMethod, IAdminMenuPl
 
     public async Task<bool> HidePaymentMethodAsync(IList<ShoppingCartItem> cart)
     {
-        bool hide = false;
-        var storeId = await _storeContext.GetActiveStoreScopeConfigurationAsync();
-        var zarinPalPaymentSettings = await _settingService.LoadSettingAsync<ZarinpalPaymentSettings>(storeId);
-        hide = string.IsNullOrWhiteSpace(_zarinPalPaymentSettings.MerchantID);
+        // var storeId = await _storeContext.GetActiveStoreScopeConfigurationAsync();
+        // var zarinPalPaymentSettings = await _settingService.LoadSettingAsync<ZarinpalPaymentSettings>(storeId);
+        var hide = string.IsNullOrWhiteSpace(_zarinPalPaymentSettings.MerchantID);
         if (_zarinPalPaymentSettings.BlockOverseas)
             hide = hide || ZarinpalHelper.IsOverseaseIp(_httpContextAccessor.HttpContext.Connection.RemoteIpAddress);
         return hide;
@@ -200,7 +199,7 @@ public class ZarinPalPaymentProcessor : BasePlugin, IPaymentMethod, IAdminMenuPl
 
             ["Plugins.Payments.ZarinPal.Fields.Method"] = "Communication Method",
             ["Plugins.Payments.ZarinPal.Fields.Method.REST"] = "REST(recommanded)",
-            ["Plugins.Payments.ZarinPal.Fields.Method.SOAP"] = "SOAP(Deprecated By Zarinpal)",
+            ["Plugins.Payments.ZarinPal.Fields.Method.SOAP"] = "SOAP(Discontinued By Zarinpal)",
 
             ["Plugins.Payments.ZarinPal.Fields.UseSandbox"] = "Use Snadbox for testing payment GateWay without real paying.",
             ["Plugins.Payments.ZarinPal.Fields.MerchantID"] = "GateWay Merchant ID",

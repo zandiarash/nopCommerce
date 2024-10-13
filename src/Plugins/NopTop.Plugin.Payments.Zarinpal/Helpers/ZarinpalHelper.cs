@@ -12,7 +12,7 @@ public class ZarinpalHelper
             string.Concat($"https://{(useSandbox ? "sandbox" : "payment")}.zarinpal.com/pg/StartPay/", authority, zarinGate)
                            :
             string.Concat(storeLocation, "Plugins/PaymentZarinpal/ErrorHandler", "?Error=",
-                ZarinpalErrorHelper.StatusToResult(EnumErrorType.PaymentRequest, (int)code, language))
+                ZarinpalErrorHelper.StatusToResult((int)code, language))
                             ;
         var uri = new Uri(urlProduced);
         return uri.AbsoluteUri;

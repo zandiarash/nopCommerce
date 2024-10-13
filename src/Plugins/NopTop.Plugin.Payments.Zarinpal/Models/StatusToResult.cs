@@ -8,5 +8,6 @@ public class StatusToResult
         IsOk = false;
     }
     public string Message { get; set; }
+    public EnumErrorType ErrorType { get; set; }
     public bool IsOk { get; set; }
 }

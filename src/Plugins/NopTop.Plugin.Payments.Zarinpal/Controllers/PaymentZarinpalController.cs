@@ -169,7 +169,7 @@ public class PaymentZarinPalController : BasePaymentController
 
     #endregion
 
-    public async Task<IActionResult> ResultHandler(string statusOKorNOK, string authority, string oGUID)
+    public async Task<IActionResult> ResultHandler(string status, string authority, string oGUID)
     {
         if (await _paymentPluginManager.LoadPluginBySystemNameAsync("NopTop.Payments.Zarinpal") is not ZarinPalPaymentProcessor processor || !_paymentPluginManager.IsPluginActive(processor))
             throw new NopException("ZarinPal module cannot be loaded");
@@ -188,11 +188,11 @@ public class PaymentZarinPalController : BasePaymentController
         if (_zarinPalPaymentSettings.RialToToman)
             total = total / 10;
 
-        if (string.IsNullOrEmpty(statusOKorNOK) == false && string.IsNullOrEmpty(authority) == false)
+        if (string.IsNullOrEmpty(status) == false && string.IsNullOrEmpty(authority) == false)
         {
             string refId = "0";
             System.Net.ServicePointManager.Expect100Continue = false;
-            int status = -1;
+            int statusCode = -1;
             var storeScope = await _storeContext.GetActiveStoreScopeConfigurationAsync();
             var zarinPalSettings = await _settingService.LoadSettingAsync<ZarinpalPaymentSettings>(storeScope);
 
@@ -208,24 +208,26 @@ public class PaymentZarinPalController : BasePaymentController
             var response = ZarinPalPaymentProcessor.ClientZarinPal.PostAsync(url, content).Result;
             var responseString = response.Content.ReadAsStringAsync().Result;
 
-            if (statusOKorNOK == "OK")
+            if (status == "OK")
             {
                 var restVerifyModelOK = JsonConvert.DeserializeObject<RestVerifyModel<List<string>>>(responseString);
-                status = restVerifyModelOK.data.code;
+                statusCode = restVerifyModelOK.data.code;
                 refId = restVerifyModelOK.data.ref_id.ToString();
             }
-            else if (statusOKorNOK == "NOK")
+            else if (status == "NOK")
             {
                 var restVerifyModelNOK = JsonConvert.DeserializeObject<RestVerifyModel<ErrorDetails>>(responseString);
-                status = restVerifyModelNOK.errors.code;
+                statusCode = restVerifyModelNOK.errors.code;
             }
 
-            var resultMessage = ZarinpalErrorHelper.StatusToResult(EnumErrorType.PaymentRequest, status, language);
+            var resultMessage = ZarinpalErrorHelper.StatusToResult(statusCode, language);
             var orderNote = new OrderNote()
             {
                 OrderId = order.Id,
-                Note = string.Concat("پرداخت ", resultMessage.IsOk ? "" : "نا", "موفق", " - ", "پیام درگاه : ", resultMessage.Message,
-                  resultMessage.IsOk ? string.Concat(" - ", "کد پی گیری : ", refId) : ""
+                Note = string.Concat("وضعیت : پرداخت ", resultMessage.IsOk ? "" : "نا", "موفق", " - ", "پیام زرین پال : ", resultMessage.Message,
+                  resultMessage.IsOk ?
+                    string.Concat(" - کد پی گیری : ", refId) :
+                    string.Concat(" - محل خطا : ", language == "fa" ? resultMessage.ErrorType.GetDescription() : resultMessage.ErrorType)
                 ),
                 DisplayToCustomer = true,
                 CreatedOnUtc = DateTime.UtcNow
@@ -246,10 +248,10 @@ public class PaymentZarinPalController : BasePaymentController
     public ActionResult ErrorHandler(string error)
     {
         var language = _languageService.GetTwoLetterIsoLanguageName(_workContext.GetWorkingLanguageAsync().Result);
-        int code = 0;
-        Int32.TryParse(error, out code);
+        int code;
+        int.TryParse(error, out code);
         if (code != 0)
-            error = ZarinpalErrorHelper.StatusToResult(EnumErrorType.PaymentRequest, code, language).Message;
+            error = ZarinpalErrorHelper.StatusToResult(code, language).Message;
         ViewBag.Err = string.Concat("خطا : ", error);
         return View("~/Plugins/NopTop.Payments.ZarinPal/Views/ErrorHandler.cshtml");
     }
