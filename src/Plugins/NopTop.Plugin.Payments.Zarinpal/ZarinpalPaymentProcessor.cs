@@ -161,8 +161,6 @@ public class ZarinPalPaymentProcessor : BasePlugin, IPaymentMethod, IAdminMenuPl
 
     public async Task<bool> HidePaymentMethodAsync(IList<ShoppingCartItem> cart)
     {
-        // var storeId = await _storeContext.GetActiveStoreScopeConfigurationAsync();
-        // var zarinPalPaymentSettings = await _settingService.LoadSettingAsync<ZarinpalPaymentSettings>(storeId);
         var hide = string.IsNullOrWhiteSpace(_zarinPalPaymentSettings.MerchantID);
         if (_zarinPalPaymentSettings.BlockOverseas)
             hide = hide || ZarinpalHelper.IsOverseaseIp(_httpContextAccessor.HttpContext.Connection.RemoteIpAddress);
@@ -192,6 +190,7 @@ public class ZarinPalPaymentProcessor : BasePlugin, IPaymentMethod, IAdminMenuPl
 
         await _localizationService.AddOrUpdateLocaleResourceAsync(new Dictionary<string, string>
         {
+            ["Plugins.Payments.Zarinpal.Fields.ZarinGate.ContactInformation"] = "Contact Information",
             ["Plugins.Payments.Zarinpal.Fields.ZarinGate.Use"] = "Use ZarinGate",
             ["Plugins.Payments.Zarinpal.Fields.ZarinGate.Type"] = "Select ZarinGate Type",
 
@@ -220,9 +219,11 @@ public class ZarinPalPaymentProcessor : BasePlugin, IPaymentMethod, IAdminMenuPl
         });
 
         var lang = (await _languageService.GetAllLanguagesAsync()).FirstOrDefault(x => x.LanguageCulture == "fa-IR");
+        var rialToToman = "تبدیل ریال به تومان";
         if (lang != null)
             await _localizationService.AddOrUpdateLocaleResourceAsync(new Dictionary<string, string>
             {
+                ["Plugins.Payments.Zarinpal.Fields.ZarinGate.ContactInformation"] = "اطلاعات تماس با پشتیبانی",
                 ["Plugins.Payments.Zarinpal.Fields.ZarinGate.Use"] = "استفاده از زرین گیت",
                 ["Plugins.Payments.Zarinpal.Fields.ZarinGate.Type"] = "انتخاب نوع زرین گیت",
 
@@ -239,11 +240,13 @@ public class ZarinPalPaymentProcessor : BasePlugin, IPaymentMethod, IAdminMenuPl
                 ["plugins.payments.zarinpal.PaymentMethodDescription"] = "درگاه واسط زرین پال",
                 ["Plugins.Payments.Zarinpal.Fields.RedirectionTip"] = "هم اکنون به درگاه بانک زرین پال منتقل می شوید.",
                 ["Plugins.Payments.Zarinpal.Fields.BlockOverseas"] = "قطع دسترسی برای آی پی های خارج از کشور",
-                ["Plugins.Payments.Zarinpal.Fields.RialToToman"] = "تبدیل ریال به تومن",
+                ["Plugins.Payments.Zarinpal.Fields.RialToToman"] = rialToToman,
                 ["Plugins.Payments.Zarinpal.Fields.RialToToman.Instructions"] =
                     string.Concat(
-                        "واحد ارزی پیش فرض درگاه پرداخت زرین پال تومان می باشد.", "<br/>",
-                        "لذا در صورتی که وبسایت شما از واحد ارزی ریال استفاده می کند باید قبل از پرداخت مبلغ نهایی به تومان تبدیل گردد", "<br/>",
+                        "در صورتی که قیمت کالاها بصورت ریال وارد شده باشد اما به کاربر بصورت تومان نمایش داده می شود", " ",
+                        "شما بایستی گزینه ", $"<b>{rialToToman}</b>", " را انتخاب نمایید ", "<br/>",
+                        "اما در صورتی که قیمت کالاها بصورت تومان وارد شده باشد و به کاربر نیز بصورت تومان نمایش داده می شود", " ",
+                        "نیازی به انتخاب گزینه زیر نیست", "<br/>",
                         "لطفا در نظر داشته باشید که جهت تبدیل ریال به تومان عدد تقسیم بر 10 شده و در واقع رقم آخر حذف می گردد", "<br/>",
                         "در صورتی که مایل به تغییر از ریال به تومان هنگام پرداخت می باشید این گزینه را فعال نمایید"
                     )

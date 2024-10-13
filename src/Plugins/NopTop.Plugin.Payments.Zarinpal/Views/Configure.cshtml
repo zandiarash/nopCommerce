@@ -6,115 +6,200 @@
 
 @await Component.InvokeAsync("StoreScopeConfiguration")
 
+<style>
+    p {
+        text-align: justify;
+    }
+
+    .BtnSave {
+        width: 100%;
+    }
+
+    .ZarinFooter {
+        background-color: #cdcdcb;
+    }
+</style>
 <form asp-controller="PaymentZarinpal" asp-action="Configure" method="post">
     <div class="cards-group">
         <div class="card card-default">
             <div class="card-body">
-                @Html.Raw(T("Plugins.Payments.ZarinPal.Instructions"))
+                <p>
+                    @Html.Raw(T("Plugins.Payments.ZarinPal.Instructions"))
+                </p>
+                <hr />
                 <div class="form-group row">
-                    <div class="col-md-3">
-                        <nop-override-store-checkbox asp-for="UseSandbox_OverrideForStore" asp-input="UseSandbox" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                    <div class="col-md-4">
+                        <nop-override-store-checkbox asp-for="UseSandbox_OverrideForStore" asp-input="UseSandbox"
+                            asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
                         <nop-label asp-for="UseSandbox" />
                     </div>
-                    <div class="col-md-9">
+                    <div class="col-md-8">
                         <nop-editor asp-for="UseSandbox" />
                         <span asp-validation-for="UseSandbox"></span>
                     </div>
                 </div>
+                <hr />
                 <div class="form-group row">
-                    <div class="col-md-3">
-                         <nop-label asp-for="Method" />
+                    <div class="col-md-4">
+                        <nop-label asp-for="Method" />
                     </div>
-                    <div class="col-md-9">
-                        <input type="radio" asp-for="Method" value="@((int)EnumMethod.REST)" checked="@(Model.Method==EnumMethod.REST)" id="EnumMethod.REST" />
-                        <label class="forcheckbox" for="Method">@T("Plugins.Payments.ZarinPal.Fields.Method.REST")</label>
-                        <input type="radio" disabled asp-for="Method" value="@((int)EnumMethod.SOAP)" checked="@(Model.Method==EnumMethod.SOAP)" id="EnumMethod.SOAP" />
-                        <label class="forcheckbox" for="Method">@T("Plugins.Payments.ZarinPal.Fields.Method.SOAP")</label>
+                    <div class="col-md-8">
+                        <input type="radio" asp-for="Method" value="@((int)EnumMethod.REST)"
+                            checked="@(Model.Method==EnumMethod.REST)" id="EnumMethod.REST" />
+                        <label class="forcheckbox"
+                            for="Method">@T("Plugins.Payments.ZarinPal.Fields.Method.REST")</label>
+                        <input type="radio" disabled asp-for="Method" value="@((int)EnumMethod.SOAP)"
+                            checked="@(Model.Method==EnumMethod.SOAP)" id="EnumMethod.SOAP" />
+                        <label class="forcheckbox"
+                            for="Method">@T("Plugins.Payments.ZarinPal.Fields.Method.SOAP")</label>
                     </div>
                 </div>
+                <hr />
                 <div class="form-group row">
-                    <div class="col-md-3">
-                        <nop-override-store-checkbox asp-for="MerchantID_OverrideForStore" asp-input="MerchantID" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                    <div class="col-md-4">
+                        <nop-override-store-checkbox asp-for="MerchantID_OverrideForStore" asp-input="MerchantID"
+                            asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
                         <nop-label asp-for="MerchantID" />
                     </div>
-                    <div class="col-md-9">
+                    <div class="col-md-8">
                         <nop-editor asp-for="MerchantID" />
                         <span asp-validation-for="MerchantID"></span>
                     </div>
                 </div>
+                <hr />
                 <div class="form-group row">
-                    <div class="col-md-3">
-                        <nop-override-store-checkbox asp-for="BlockOverseas_OverrideForStore" asp-input="BlockOverseas" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                    <div class="col-md-4">
+                        <nop-override-store-checkbox asp-for="BlockOverseas_OverrideForStore" asp-input="BlockOverseas"
+                            asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
                         <nop-label asp-for="BlockOverseas" />
                     </div>
-                    <div class="col-md-9">
+                    <div class="col-md-8">
                         <nop-editor asp-for="BlockOverseas" />
                         <span asp-validation-for="BlockOverseas"></span>
                     </div>
                 </div>
-                @Html.Raw(T("Plugins.Payments.Zarinpal.Fields.RialToToman.Instructions"))
+                <hr />
                 <div class="form-group row">
-                    <div class="col-md-3">
-                        <nop-override-store-checkbox asp-for="RialToToman_OverrideForStore" asp-input="RialToToman" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                    <div class="col-md-4">
+                        <nop-override-store-checkbox asp-for="RialToToman_OverrideForStore" asp-input="RialToToman"
+                            asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
                         <nop-label asp-for="RialToToman" />
                     </div>
-                    <div class="col-md-9">
+                    <div class="col-md-1">
                         <nop-editor asp-for="RialToToman" />
                         <span asp-validation-for="RialToToman"></span>
                     </div>
+                    <div class="col-md-7">
+                        <p>
+                            @Html.Raw(T("Plugins.Payments.Zarinpal.Fields.RialToToman.Instructions"))
+                        </p>
+                    </div>
                 </div>
-                @Html.Raw(T("Plugins.Payments.Zarinpal.Fields.ZarinGate.Instructions"))
+                <hr />
                 <div class="form-group row">
-                    <div class="col-md-3">
-                        <nop-override-store-checkbox asp-for="UseZarinGate_OverrideForStore" asp-input="UseZarinGate" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                    <div class="col-md-4">
+                        <nop-override-store-checkbox asp-for="UseZarinGate_OverrideForStore" asp-input="UseZarinGate"
+                            asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
                         <nop-label asp-for="UseZarinGate" />
                     </div>
-                    <div class="col-md-9">
+                    <div class="col-md-1">
                         <nop-editor asp-for="UseZarinGate" />
                         <span asp-validation-for="UseZarinGate"></span>
                     </div>
-                </div>
-                <div class="form-group row">
-                    <div class="col-md-3">
-                         <nop-label asp-for="ZarinGateType" />
+                    <div class="col-md-7">
+                        <p>
+                            @Html.Raw(T("Plugins.Payments.Zarinpal.Fields.ZarinGate.Instructions"))
+                        </p>
                     </div>
-                    <div class="col-md-9">
-                        <select asp-for="ZarinGateType" class="form-control" asp-items="@Html.GetEnumSelectList<EnumZarinGate>()">
+                </div>
+                <hr />
+                <div class="form-group row">
+                    <div class="col-md-4">
+                        <nop-label asp-for="ZarinGateType" />
+                    </div>
+                    <div class="col-md-8">
+                        <select asp-for="ZarinGateType" class="form-control"
+                            asp-items="@Html.GetEnumSelectList<EnumZarinGate>()">
                         </select>
                     </div>
                 </div>
-                <div class="form-group row">
-                    <div class="col-md-9 col-md-offset-3">
-                        <input type="submit" name="save" class="btn bg-primary" value="@T("Admin.Common.Save")" />
-                    </div>
-                </div>
+                <hr />
+                <center>
+                    <input type="submit" name="save" class="btn bg-primary btn-lg BtnSave"
+                        value="@T("Admin.Common.Save")" />
+                </center>
+                <hr />
+            </div>
+            <div class="ZarinFooter">
+                <center class="container mt-5" style="direction: ltr !important;">
+                    <h2>@Html.Raw(T("Plugins.Payments.Zarinpal.Fields.ZarinGate.ContactInformation"))</h2>
+                    <ul class="list-unstyled">
+                        <li>
+                            <strong>Website:</strong> <a href="https://noptop.ir/"
+                                class="btn btn-link">www.noptop.ir</a>
+                        </li>
+                        <li>
+                            <strong>Call:</strong> <a href="tel:+989139435686" class="btn btn-link">+989139435686</a>
+                        </li>
+                        <li>
+                            <strong>Telegram:</strong> <a href="https://t.me/ZandiArash"
+                                class="btn btn-link">ZandiArash</a>
+                        </li>
+                        <li>
+                            <strong>Whatsapp:</strong> <a href="https://wa.me/989139435686"
+                                class="btn btn-link">+989139435686</a>
+                        </li>
+                        <li>
+                            <strong>Email:</strong> <a href="mailto:ZandiArash@Hotmail.com"
+                                class="btn btn-link">ZandiArash[At]Hotmail.com</a>
+                        </li>
+                        <li>
+                            <strong>GitHub:</strong> <a
+                                href="https://github.com/zandiarash/NopTop-Zarinpal-for-nopCommerce"
+                                class="btn btn-link">NopTop-Zarinpal for nopCommerce</a>
+                        </li>
+                        <li>
+                            <strong>NopCommerce:</strong> <a
+                                href="https://www.nopcommerce.com/en/zarinpal-payment-noptop"
+                                class="btn btn-link">Zarinpal Payment on NopCommerce</a>
+                        </li>
+                        <li>
+                            <strong>Zarinpal Docs:</strong> <a
+                                href="https://www.zarinpal.com/docs/extensions/unofficial-nopcommerce.html"
+                                class="btn btn-link">Zarinpal Extension Documentation</a>
+                        </li>
+                    </ul>
+                </center>
             </div>
         </div>
+
     </div>
+
 </form>
 
+
+
 <script>
-    $(document).ready(function(){
-        var lastMerchant= $("input[id='MerchantID']").val();
-        var merchantTest="99999999-9999-9999-9999-999999999999";
-        $("input[id='UseSandbox']").click( function(){
-            if( $(this).is(':checked') ) 
-              $("input[id='MerchantID']").val(merchantTest);
+    $(document).ready(function () {
+        var lastMerchant = $("input[id='MerchantID']").val();
+        var merchantTest = "99999999-9999-9999-9999-999999999999";
+        $("input[id='UseSandbox']").click(function () {
+            if ($(this).is(':checked'))
+                $("input[id='MerchantID']").val(merchantTest);
             else
-             $("input[id='MerchantID']").val(lastMerchant);
+                $("input[id='MerchantID']").val(lastMerchant);
         });
     });
 
-    function Enabler(checked)
-    {
-        if(checked) 
-            $('#ZarinGateType').removeAttr('disabled'); 
-        else  
-            $('#ZarinGateType').attr('disabled','disabled');
+    function Enabler(checked) {
+        if (checked)
+            $('#ZarinGateType').removeAttr('disabled');
+        else
+            $('#ZarinGateType').attr('disabled', 'disabled');
     }
-    $(document).ready(function(){
-        Enabler('@(Model.UseZarinGate)'.toLowerCase()==='true');
-        $("#UseZarinGate").click( function(){
+    $(document).ready(function () {
+        Enabler('@(Model.UseZarinGate)'.toLowerCase() === 'true');
+        $("#UseZarinGate").click(function () {
             Enabler($(this).is(':checked'));
         });
     });
